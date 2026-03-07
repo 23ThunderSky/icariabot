@@ -128,29 +128,6 @@ await interaction.showModal(modal);
 
 }
 
-const modal = new ModalBuilder()
-.setCustomId("modal_magazzino")
-.setTitle("Modifica Magazzino");
-
-const titolo = new TextInputBuilder()
-.setCustomId("titolo")
-.setLabel("Titolo")
-.setStyle(TextInputStyle.Short);
-
-const contenuto = new TextInputBuilder()
-.setCustomId("contenuto")
-.setLabel("Contenuto")
-.setStyle(TextInputStyle.Paragraph);
-
-const row1 = new ActionRowBuilder().addComponents(titolo);
-const row2 = new ActionRowBuilder().addComponents(contenuto);
-
-modal.addComponents(row1, row2);
-
-await interaction.showModal(modal);
-
-}
-
 }
 
 if (interaction.isModalSubmit()) {
