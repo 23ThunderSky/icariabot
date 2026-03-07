@@ -227,6 +227,8 @@ embeds: [embed],
 components: [row]
 });
 
+} // <-- QUESTA MANCAVA
+
 if (interaction.customId === "modal_treno") {
 
 const titolo = interaction.fields.getTextInputValue("titolo");
