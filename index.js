@@ -153,6 +153,12 @@ await msg.edit({
 content: "🚂 Il treno è arrivato con la merce!"
 });
 
+setTimeout(async () => {
+try {
+await msg.delete();
+} catch {}
+}, 10000);
+
 return;
 
 }
