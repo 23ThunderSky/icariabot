@@ -6,8 +6,13 @@ Routes,
 SlashCommandBuilder,
 ActionRowBuilder,
 StringSelectMenuBuilder,
-Events,
-EmbedBuilder
+ButtonBuilder,
+ButtonStyle,
+ModalBuilder,
+TextInputBuilder,
+TextInputStyle,
+EmbedBuilder,
+Events
 } = require("discord.js");
 
 const client = new Client({
@@ -48,27 +53,15 @@ const menu = new StringSelectMenuBuilder()
 .setCustomId("menu_crea")
 .setPlaceholder("Scegli cosa creare")
 .addOptions([
-{
-label: "Magazzino",
-value: "magazzino",
-emoji: "📦"
-},
-{
-label: "Treno",
-value: "treno",
-emoji: "🚂"
-},
-{
-label: "Viaggio",
-value: "viaggio",
-emoji: "🚚"
-}
+{ label: "Magazzino", value: "magazzino", emoji: "📦" },
+{ label: "Treno", value: "treno", emoji: "🚂" },
+{ label: "Viaggio", value: "viaggio", emoji: "🚚" }
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content: "Seleziona cosa vuoi creare:",
+content: "Seleziona cosa creare:",
 components: [row]
 });
 
@@ -78,41 +71,83 @@ components: [row]
 
 if (interaction.isStringSelectMenu()) {
 
-const scelta = interaction.values[0];
+if (interaction.values[0] === "magazzino") {
 
-let embed;
-
-if (scelta === "magazzino") {
-
-embed = new EmbedBuilder()
+const embed = new EmbedBuilder()
 .setTitle("📦 Magazzino")
-.setDescription("Magazzino creato")
-.setColor("Green");
+.setDescription("Contenuto del magazzino");
 
-}
+const button = new ButtonBuilder()
+.setCustomId("modifica_magazzino")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
 
-if (scelta === "treno") {
-
-embed = new EmbedBuilder()
-.setTitle("🚂 Treno")
-.setDescription("Sistema treno creato")
-.setColor("Blue");
-
-}
-
-if (scelta === "viaggio") {
-
-embed = new EmbedBuilder()
-.setTitle("🚚 Viaggio")
-.setDescription("Sistema viaggio creato")
-.setColor("Orange");
-
-}
+const row = new ActionRowBuilder().addComponents(button);
 
 await interaction.update({
 embeds: [embed],
-components: []
+components: [row]
 });
+
+}
+
+}
+
+if (interaction.isButton()) {
+
+if (interaction.customId === "modifica_magazzino") {
+
+const modal = new ModalBuilder()
+.setCustomId("modal_magazzino")
+.setTitle("Modifica Magazzino");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
+}
+
+}
+
+if (interaction.isModalSubmit()) {
+
+if (interaction.customId === "modal_magazzino") {
+
+const titolo = interaction.fields.getTextInputValue("titolo");
+const contenuto = interaction.fields.getTextInputValue("contenuto");
+
+const embed = new EmbedBuilder()
+.setTitle(titolo)
+.setDescription(contenuto);
+
+const button = new ButtonBuilder()
+.setCustomId("modifica_magazzino")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(button);
+
+await interaction.update({
+embeds: [embed],
+components: [row]
+});
+
+}
 
 }
 
