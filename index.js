@@ -132,6 +132,39 @@ return;
 
 if (interaction.isButton()) {
 
+if (interaction.customId === "treno_arrivo") {
+
+let tempo = 10;
+
+const msg = await interaction.reply({
+content: `🚂 Il treno arriverà fra **${tempo} secondi**`,
+fetchReply: true
+});
+
+const intervallo = setInterval(async () => {
+
+tempo--;
+
+if (tempo <= 0) {
+
+clearInterval(intervallo);
+
+await msg.edit({
+content: "🚂 Il treno è arrivato con la merce!"
+});
+
+return;
+
+}
+
+await msg.edit({
+content: `🚂 Il treno arriverà fra **${tempo} secondi**`
+});
+
+}, 1000);
+
+}
+
 if (interaction.customId === "modifica_magazzino") {
 
 const embed = interaction.message.embeds[0] || {};
