@@ -98,10 +98,10 @@ if (interaction.isButton()) {
 
 if (interaction.customId === "modifica_magazzino") {
 
-const embed = interaction.message.embeds[0];
+const embed = interaction.message.embeds[0] || {};
 
-const titoloAttuale = embed?.title || "";
-const contenutoAttuale = embed?.description || "";
+const titoloAttuale = embed.data?.title ?? embed.title ?? "";
+const contenutoAttuale = embed.data?.description ?? embed.description ?? "";
 
 const modal = new ModalBuilder()
 .setCustomId("modal_magazzino")
@@ -135,7 +135,15 @@ if (interaction.isModalSubmit()) {
 if (interaction.customId === "modal_magazzino") {
 
 const titolo = interaction.fields.getTextInputValue("titolo");
-const contenuto = interaction.fields.getTextInputValue("contenuto");
+let contenuto = interaction.fields.getTextInputValue("contenuto");
+
+contenuto = contenuto
+.split("\n")
+.map(riga => {
+if (riga.includes("|")) return riga;
+return `${riga} | 0`;
+})
+.join("\n");
 
 const embed = new EmbedBuilder()
 .setTitle(titolo)
