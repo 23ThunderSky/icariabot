@@ -8,6 +8,9 @@ ActionRowBuilder,
 StringSelectMenuBuilder,
 ButtonBuilder,
 ButtonStyle,
+ModalBuilder,
+TextInputBuilder,
+TextInputStyle,
 EmbedBuilder,
 Events
 } = require("discord.js");
@@ -19,7 +22,7 @@ intents: [GatewayIntentBits.Guilds]
 const commands = [
 new SlashCommandBuilder()
 .setName("crea")
-.setDescription("Crea il pannello del treno")
+.setDescription("Crea qualcosa")
 ].map(c => c.toJSON());
 
 client.once("clientReady", async () => {
@@ -46,17 +49,65 @@ if (interaction.isChatInputCommand()) {
 
 if (interaction.commandName === "crea") {
 
-const embed = new EmbedBuilder()
-.setTitle("🚂 Gestione Treno")
-.setDescription("Legna | 0\nGrano | 0");
+const menu = new StringSelectMenuBuilder()
+.setCustomId("menu_crea")
+.setPlaceholder("Scegli cosa creare")
+.addOptions([
+{ label: "Magazzino", value: "magazzino", emoji: "📦" },
+{ label: "Treno", value: "treno", emoji: "🚂" },
+{ label: "Viaggio", value: "viaggio", emoji: "🚚" }
+]);
 
-const arrivo = new ButtonBuilder()
+const row = new ActionRowBuilder().addComponents(menu);
+
+await interaction.reply({
+content: "Seleziona cosa creare:",
+components: [row]
+});
+
+}
+
+return;
+}
+
+if (interaction.isStringSelectMenu()) {
+
+if (interaction.customId === "menu_crea") {
+
+if (interaction.values[0] === "magazzino") {
+
+const embed = new EmbedBuilder()
+.setTitle("📦 Magazzino")
+.setDescription("Contenuto del magazzino");
+
+const button = new ButtonBuilder()
+.setCustomId("modifica_magazzino")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(button);
+
+await interaction.update({
+embeds: [embed],
+components: [row]
+});
+
+}
+
+if (interaction.values[0] === "treno") {
+
+const embed = new EmbedBuilder()
+.setTitle("🚂 Treno")
+.setDescription("Lista merci del treno");
+
+const aumenta = new ButtonBuilder()
 .setCustomId("treno_arrivo")
 .setLabel("Treno in arrivo")
 .setStyle(ButtonStyle.Success)
 .setEmoji("🚂");
 
-const ritiro = new ButtonBuilder()
+const diminuisci = new ButtonBuilder()
 .setCustomId("treno_ritiro")
 .setLabel("Ritiro merce")
 .setStyle(ButtonStyle.Danger)
@@ -65,14 +116,57 @@ const ritiro = new ButtonBuilder()
 const modifica = new ButtonBuilder()
 .setCustomId("modifica_treno")
 .setLabel("Modifica rapida")
-.setStyle(ButtonStyle.Primary);
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
 
-const row = new ActionRowBuilder().addComponents(arrivo, ritiro, modifica);
+const row = new ActionRowBuilder().addComponents(aumenta, diminuisci, modifica);
 
-await interaction.reply({
+await interaction.update({
 embeds: [embed],
 components: [row]
 });
+
+}
+
+}
+
+if (interaction.customId === "menu_treno_merce") {
+
+let merce = interaction.values[0];
+let nome = merce === "legna" ? "🌲 Legna" : "🌾 Grano";
+
+let tempo = 10;
+
+const msg = await interaction.reply({
+content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`,
+fetchReply: true
+});
+
+const intervallo = setInterval(async () => {
+
+tempo--;
+
+if (tempo <= 0) {
+
+clearInterval(intervallo);
+
+await msg.edit({
+content: `🚂 Il treno con **${nome}** è arrivato con la merce!`
+});
+
+setTimeout(async () => {
+try { await msg.delete(); } catch {}
+}, 10000);
+
+return;
+
+}
+
+await msg.edit({
+content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`
+});
+
+}, 1000);
 
 }
 
@@ -83,42 +177,163 @@ if (interaction.isButton()) {
 if (interaction.customId === "treno_arrivo") {
 
 const menu = new StringSelectMenuBuilder()
-.setCustomId("menu_treno")
-.setPlaceholder("Seleziona merce")
+.setCustomId("menu_treno_merce")
+.setPlaceholder("Seleziona la merce")
 .addOptions([
-{
-label: "Legna",
-value: "Legna",
-emoji: "🪵"
-},
-{
-label: "Grano",
-value: "Grano",
-emoji: "🌾"
-}
+{ label: "Legna", value: "legna", emoji: "🌲" },
+{ label: "Grano", value: "grano", emoji: "🌾" }
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content: "🚂 Seleziona la merce che arriverà con il treno",
+content: "🚂 Seleziona la merce in arrivo:",
 components: [row],
 ephemeral: true
 });
 
 }
 
+if (interaction.customId === "modifica_treno") {
+
+const embed = interaction.message.embeds[0]?.toJSON() || {};
+
+const titoloAttuale = embed.title || "";
+const contenutoAttuale = embed.description || "";
+
+const modal = new ModalBuilder()
+.setCustomId("modal_treno")
+.setTitle("Modifica Treno");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
 }
 
-if (interaction.isStringSelectMenu()) {
+if (interaction.customId === "modifica_magazzino") {
 
-if (interaction.customId === "menu_treno") {
+const embed = interaction.message.embeds[0] || {};
 
-const prodotto = interaction.values[0];
+const titoloAttuale = embed.data?.title ?? embed.title ?? "";
+const contenutoAttuale = embed.data?.description ?? embed.description ?? "";
 
-await interaction.reply({
-content: `🚂 Il treno arriverà con **${prodotto}**`,
-ephemeral: true
+const modal = new ModalBuilder()
+.setCustomId("modal_magazzino")
+.setTitle("Modifica Magazzino");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
+}
+
+}
+
+if (interaction.isModalSubmit()) {
+
+if (interaction.customId === "modal_magazzino") {
+
+const titolo = interaction.fields.getTextInputValue("titolo");
+let contenuto = interaction.fields.getTextInputValue("contenuto");
+
+contenuto = contenuto
+.split("\n")
+.map(riga => {
+if (riga.includes("|")) return riga;
+return `${riga} | 0`;
+})
+.join("\n");
+
+const embed = new EmbedBuilder()
+.setTitle(titolo)
+.setDescription(contenuto);
+
+const button = new ButtonBuilder()
+.setCustomId("modifica_magazzino")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(button);
+
+await interaction.update({
+embeds: [embed],
+components: [row]
+});
+
+}
+
+if (interaction.customId === "modal_treno") {
+
+const titolo = interaction.fields.getTextInputValue("titolo");
+let contenuto = interaction.fields.getTextInputValue("contenuto");
+
+contenuto = contenuto
+.split("\n")
+.map(riga => {
+if (riga.includes("|")) return riga;
+return `${riga} | 0`;
+})
+.join("\n");
+
+const embed = new EmbedBuilder()
+.setTitle(titolo)
+.setDescription(contenuto);
+
+const aumenta = new ButtonBuilder()
+.setCustomId("treno_arrivo")
+.setLabel("Treno in arrivo")
+.setStyle(ButtonStyle.Success)
+.setEmoji("🚂");
+
+const diminuisci = new ButtonBuilder()
+.setCustomId("treno_ritiro")
+.setLabel("Ritiro merce")
+.setStyle(ButtonStyle.Danger)
+.setEmoji("📦");
+
+const modifica = new ButtonBuilder()
+.setCustomId("modifica_treno")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(aumenta, diminuisci, modifica);
+
+await interaction.update({
+embeds: [embed],
+components: [row]
 });
 
 }
