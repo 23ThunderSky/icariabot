@@ -110,7 +110,13 @@ const diminuisci = new ButtonBuilder()
 .setStyle(ButtonStyle.Danger)
 .setEmoji("📦");
 
-const row = new ActionRowBuilder().addComponents(aumenta, diminuisci);
+const modifica = new ButtonBuilder()
+.setCustomId("modifica_treno")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(aumenta, diminuisci, modifica);
 
 await interaction.update({
 embeds: [embed],
@@ -122,6 +128,38 @@ components: [row]
 }
 
 if (interaction.isButton()) {
+
+if (interaction.customId === "modifica_treno") {
+
+const embed = interaction.message.embeds[0]?.toJSON() || {};
+
+const titoloAttuale = embed.title || "";
+const contenutoAttuale = embed.description || "";
+
+const modal = new ModalBuilder()
+.setCustomId("modal_treno")
+.setTitle("Modifica Treno");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
+}
 
 if (interaction.customId === "modifica_magazzino") {
 
@@ -188,6 +226,50 @@ await interaction.update({
 embeds: [embed],
 components: [row]
 });
+
+if (interaction.customId === "modal_treno") {
+
+const titolo = interaction.fields.getTextInputValue("titolo");
+let contenuto = interaction.fields.getTextInputValue("contenuto");
+
+contenuto = contenuto
+.split("\n")
+.map(riga => {
+if (riga.includes("|")) return riga;
+return `${riga} | 0`;
+})
+.join("\n");
+
+const embed = new EmbedBuilder()
+.setTitle(titolo)
+.setDescription(contenuto);
+
+const aumenta = new ButtonBuilder()
+.setCustomId("treno_arrivo")
+.setLabel("Treno in arrivo")
+.setStyle(ButtonStyle.Success)
+.setEmoji("🚂");
+
+const diminuisci = new ButtonBuilder()
+.setCustomId("treno_ritiro")
+.setLabel("Ritiro merce")
+.setStyle(ButtonStyle.Danger)
+.setEmoji("📦");
+
+const modifica = new ButtonBuilder()
+.setCustomId("modifica_treno")
+.setLabel("Modifica rapida")
+.setStyle(ButtonStyle.Primary)
+.setEmoji("✏️");
+
+const row = new ActionRowBuilder().addComponents(aumenta, diminuisci, modifica);
+
+await interaction.update({
+embeds: [embed],
+components: [row]
+});
+
+}
 
 }
 
