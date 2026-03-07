@@ -92,6 +92,30 @@ components: [row]
 
 }
 
+if (interaction.customId === "treno_ritiro") {
+
+const embed = interaction.message.embeds[0]?.toJSON() || {};
+
+let righe = embed.description.split("\n");
+
+righe = righe.map(riga => {
+
+let [nome, numero] = riga.split("|");
+
+numero = Math.max(0, parseInt(numero.trim()) - 1);
+
+return `${nome.trim()} | ${numero}`;
+
+});
+
+embed.description = righe.join("\n");
+
+await interaction.update({
+embeds: [embed]
+});
+
+}
+
 }
 
 if (interaction.isButton()) {
