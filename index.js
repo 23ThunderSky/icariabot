@@ -25,7 +25,7 @@ new SlashCommandBuilder()
 .setDescription("Crea qualcosa")
 ].map(c => c.toJSON());
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
 
 console.log("Bot online");
 
@@ -125,51 +125,50 @@ components: [row]
 
 }
 
-if (interaction.customId === "menu_treno_merce") {
+if (interaction.customId === "menu_treno") {
 
-let merce = interaction.values[0];
-let nome = merce === "legna" ? "Legna" : "Grano";
+const prodotto = interaction.values[0];
 
 await interaction.reply({
-content: `🚂 Il treno con **${nome}** arriverà fra **10 secondi**`
+content: `🚂 Il treno arriverà con **${prodotto}** fra 10 secondi...`,
+ephemeral: true
 });
 
 setTimeout(async () => {
 
-let embed = interaction.message.embeds?.[0];
+const message = interaction.message;
 
+let embed = message.embeds?.[0];
 if (!embed) return;
 
 let testo = embed.description || "";
-
 let righe = testo.split("\n");
 
-righe = righe.map(r => {
+righe = righe.map(riga => {
 
-if (r.toLowerCase().startsWith(nome.toLowerCase())) {
+if (riga.toLowerCase().startsWith(prodotto.toLowerCase())) {
 
-let parti = r.split("|");
-let numero = parseInt(parti[1].trim());
+let numero = parseInt(riga.split("|")[1]) || 0;
 numero++;
 
-return `${nome} | ${numero}`;
+return `${prodotto} | ${numero}`;
 
 }
 
-return r;
+return riga;
 
 });
 
-const nuovoEmbed = new EmbedBuilder()
-.setTitle(embed.title)
+const nuovoEmbed = EmbedBuilder.from(embed)
 .setDescription(righe.join("\n"));
 
-await interaction.message.edit({
+await message.edit({
 embeds: [nuovoEmbed]
 });
 
 const msg = await interaction.followUp({
-content: "🚂 Il treno è arrivato con la merce!"
+content: `🚂 Il treno è arrivato con **${prodotto}**!`,
+ephemeral: true
 });
 
 setTimeout(() => {
@@ -187,25 +186,17 @@ if (interaction.isButton()) {
 if (interaction.customId === "treno_arrivo") {
 
 const menu = new StringSelectMenuBuilder()
-.setCustomId("menu_treno_merce")
+.setCustomId("menu_treno")
 .setPlaceholder("Seleziona la merce")
 .addOptions([
-{
-label: "Legna",
-value: "legna",
-emoji: "🌲"
-},
-{
-label: "Grano",
-value: "grano",
-emoji: "🌾"
-}
+{ label: "Legna", value: "Legna", emoji: "🪵" },
+{ label: "Grano", value: "Grano", emoji: "🌾" }
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content: "Seleziona la merce del treno:",
+content: "Seleziona quale merce arriverà:",
 components: [row],
 ephemeral: true
 });
