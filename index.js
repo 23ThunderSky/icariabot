@@ -19,6 +19,8 @@ const client = new Client({
 intents: [GatewayIntentBits.Guilds]
 });
 
+let pannelloTreno = null;
+
 const commands = [
 new SlashCommandBuilder()
 .setName("crea")
@@ -95,10 +97,13 @@ const modifica = new ButtonBuilder()
 
 const row = new ActionRowBuilder().addComponents(arrivo, ritiro, modifica);
 
-await interaction.update({
+const msg = await interaction.update({
 embeds: [embed],
-components: [row]
+components: [row],
+fetchReply: true
 });
+
+pannelloTreno = msg;
 
 }
 
@@ -131,17 +136,16 @@ await countdownMsg.edit({
 content: `🚂 Il treno è arrivato con **${prodotto}**!`
 });
 
-const message = interaction.message;
+if (!pannelloTreno) return;
 
-let embed = message.embeds?.[0];
-if (!embed) return;
+let embed = pannelloTreno.embeds[0];
 
-let testo = embed.description || "";
+let testo = embed.description;
 let righe = testo.split("\n");
 
 righe = righe.map(riga => {
 
-if (riga.toLowerCase().startsWith(prodotto.toLowerCase())) {
+if (riga.toLowerCase().includes(prodotto.toLowerCase())) {
 
 let numero = parseInt(riga.split("|")[1]) || 0;
 numero++;
@@ -157,7 +161,7 @@ return riga;
 const nuovoEmbed = EmbedBuilder.from(embed)
 .setDescription(righe.join("\n"));
 
-await message.edit({
+await pannelloTreno.edit({
 embeds: [nuovoEmbed]
 });
 
