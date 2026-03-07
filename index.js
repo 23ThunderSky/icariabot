@@ -98,6 +98,36 @@ if (interaction.isButton()) {
 
 if (interaction.customId === "modifica_magazzino") {
 
+const embed = interaction.message.embeds[0];
+
+const titoloAttuale = embed?.title || "";
+const contenutoAttuale = embed?.description || "";
+
+const modal = new ModalBuilder()
+.setCustomId("modal_magazzino")
+.setTitle("Modifica Magazzino");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
+}
+
 const modal = new ModalBuilder()
 .setCustomId("modal_magazzino")
 .setTitle("Modifica Magazzino");
