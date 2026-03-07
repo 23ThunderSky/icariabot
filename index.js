@@ -206,11 +206,11 @@ await msg.edit({
 content: `🚂 Il treno con **${nome}** è arrivato con la merce!`
 });
 
-const message = interaction.message;
+const pannello = interaction.message;
 
-if (message && message.embeds.length > 0) {
+if (pannello && pannello.embeds.length > 0) {
 
-const embed = message.embeds[0];
+const embed = pannello.embeds[0];
 let testo = embed.description || "";
 
 let righe = testo.split("\n");
@@ -244,7 +244,7 @@ return riga;
 const nuovoEmbed = EmbedBuilder.from(embed)
 .setDescription(righe.join("\n"));
 
-await message.edit({
+await pannello.edit({
 embeds: [nuovoEmbed]
 });
 
