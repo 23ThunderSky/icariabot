@@ -92,26 +92,29 @@ components: [row]
 
 }
 
-if (interaction.customId === "treno_ritiro") {
+if (interaction.values[0] === "treno") {
 
-const embed = interaction.message.embeds[0]?.toJSON() || {};
+const embed = new EmbedBuilder()
+.setTitle("🚂 Treno")
+.setDescription("Lista merci del treno");
 
-let righe = embed.description.split("\n");
+const aumenta = new ButtonBuilder()
+.setCustomId("treno_arrivo")
+.setLabel("Treno in arrivo")
+.setStyle(ButtonStyle.Success)
+.setEmoji("🚂");
 
-righe = righe.map(riga => {
+const diminuisci = new ButtonBuilder()
+.setCustomId("treno_ritiro")
+.setLabel("Ritiro merce")
+.setStyle(ButtonStyle.Danger)
+.setEmoji("📦");
 
-let [nome, numero] = riga.split("|");
-
-numero = Math.max(0, parseInt(numero.trim()) - 1);
-
-return `${nome.trim()} | ${numero}`;
-
-});
-
-embed.description = righe.join("\n");
+const row = new ActionRowBuilder().addComponents(aumenta, diminuisci);
 
 await interaction.update({
-embeds: [embed]
+embeds: [embed],
+components: [row]
 });
 
 }
