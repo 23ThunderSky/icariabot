@@ -25,7 +25,7 @@ new SlashCommandBuilder()
 .setDescription("Crea qualcosa")
 ].map(c => c.toJSON());
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
 
 console.log("Bot online");
 
