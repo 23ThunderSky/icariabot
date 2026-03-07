@@ -72,6 +72,8 @@ return;
 
 if (interaction.isStringSelectMenu()) {
 
+if (interaction.customId === "menu_crea") {
+
 if (interaction.values[0] === "magazzino") {
 
 const embed = new EmbedBuilder()
@@ -91,7 +93,6 @@ embeds: [embed],
 components: [row]
 });
 
-return;
 }
 
 if (interaction.values[0] === "treno") {
@@ -125,19 +126,19 @@ embeds: [embed],
 components: [row]
 });
 
-return;
 }
 
 }
 
-if (interaction.isButton()) {
+if (interaction.customId === "menu_treno_merce") {
 
-if (interaction.customId === "treno_arrivo") {
+let merce = interaction.values[0];
+let nome = merce === "legna" ? "🌲 Legna" : "🌾 Grano";
 
 let tempo = 10;
 
 const msg = await interaction.reply({
-content: `🚂 Il treno arriverà fra **${tempo} secondi**`,
+content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`,
 fetchReply: true
 });
 
@@ -150,13 +151,11 @@ if (tempo <= 0) {
 clearInterval(intervallo);
 
 await msg.edit({
-content: "🚂 Il treno è arrivato con la merce!"
+content: `🚂 Il treno con **${nome}** è arrivato con la merce!`
 });
 
 setTimeout(async () => {
-try {
-await msg.delete();
-} catch {}
+try { await msg.delete(); } catch {}
 }, 10000);
 
 return;
@@ -164,10 +163,66 @@ return;
 }
 
 await msg.edit({
-content: `🚂 Il treno arriverà fra **${tempo} secondi**`
+content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`
 });
 
 }, 1000);
+
+}
+
+}
+
+if (interaction.isButton()) {
+
+if (interaction.customId === "treno_arrivo") {
+
+const menu = new StringSelectMenuBuilder()
+.setCustomId("menu_treno_merce")
+.setPlaceholder("Seleziona la merce")
+.addOptions([
+{ label: "Legna", value: "legna", emoji: "🌲" },
+{ label: "Grano", value: "grano", emoji: "🌾" }
+]);
+
+const row = new ActionRowBuilder().addComponents(menu);
+
+await interaction.reply({
+content: "🚂 Seleziona la merce in arrivo:",
+components: [row],
+ephemeral: true
+});
+
+}
+
+if (interaction.customId === "modifica_treno") {
+
+const embed = interaction.message.embeds[0]?.toJSON() || {};
+
+const titoloAttuale = embed.title || "";
+const contenutoAttuale = embed.description || "";
+
+const modal = new ModalBuilder()
+.setCustomId("modal_treno")
+.setTitle("Modifica Treno");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
 
 }
 
@@ -201,40 +256,6 @@ modal.addComponents(row1, row2);
 
 await interaction.showModal(modal);
 
-return;
-}
-
-if (interaction.customId === "modifica_treno") {
-
-const embed = interaction.message.embeds[0]?.toJSON() || {};
-
-const titoloAttuale = embed.title || "";
-const contenutoAttuale = embed.description || "";
-
-const modal = new ModalBuilder()
-.setCustomId("modal_treno")
-.setTitle("Modifica Treno");
-
-const titolo = new TextInputBuilder()
-.setCustomId("titolo")
-.setLabel("Titolo")
-.setStyle(TextInputStyle.Short)
-.setValue(titoloAttuale);
-
-const contenuto = new TextInputBuilder()
-.setCustomId("contenuto")
-.setLabel("Contenuto")
-.setStyle(TextInputStyle.Paragraph)
-.setValue(contenutoAttuale);
-
-const row1 = new ActionRowBuilder().addComponents(titolo);
-const row2 = new ActionRowBuilder().addComponents(contenuto);
-
-modal.addComponents(row1, row2);
-
-await interaction.showModal(modal);
-
-return;
 }
 
 }
@@ -271,7 +292,6 @@ embeds: [embed],
 components: [row]
 });
 
-return;
 }
 
 if (interaction.customId === "modal_treno") {
