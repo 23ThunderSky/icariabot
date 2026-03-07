@@ -154,6 +154,50 @@ await msg.edit({
 content: `🚂 Il treno con **${nome}** è arrivato con la merce!`
 });
 
+const message = interaction.message;
+
+if (message && message.embeds.length > 0) {
+
+const embed = message.embeds[0];
+let testo = embed.description || "";
+
+let righe = testo.split("\n");
+
+righe = righe.map(riga => {
+
+const rigaLower = riga.toLowerCase();
+
+if (merce === "legna" && rigaLower.includes("legna")) {
+
+let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
+numero++;
+
+return `🌲 Legna | ${numero}`;
+
+}
+
+if (merce === "grano" && rigaLower.includes("grano")) {
+
+let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
+numero++;
+
+return `🌾 Grano | ${numero}`;
+
+}
+
+return riga;
+
+});
+
+const nuovoEmbed = EmbedBuilder.from(embed)
+.setDescription(righe.join("\n"));
+
+await message.edit({
+embeds: [nuovoEmbed]
+});
+
+}
+
 setTimeout(async () => {
 try { await msg.delete(); } catch {}
 }, 10000);
