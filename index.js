@@ -148,57 +148,6 @@ tempo--;
 
 if (tempo <= 0) {
 
-const message = interaction.client.trenoPannello;
-
-if (message && message.embeds.length > 0) {
-
-const embed = message.embeds[0];
-let testo = embed.description || "";
-
-let righe = testo.split("\n");
-
-righe = righe.map(riga => {
-
-let rigaLower = riga.toLowerCase();
-
-if (merce === "legna" && rigaLower.includes("legna")) {
-
-let parti = riga.split("|");
-
-let nome = parti[0].trim();
-let numero = parseInt(parti[1]) || 0;
-
-numero++;
-
-return `${nome} | ${numero}`;
-
-}
-
-if (merce === "grano" && rigaLower.includes("grano")) {
-
-let parti = riga.split("|");
-
-let nome = parti[0].trim();
-let numero = parseInt(parti[1]) || 0;
-
-numero++;
-
-return `${nome} | ${numero}`;
-
-}
-
-return riga;
-
-});
-
-const nuovoEmbed = EmbedBuilder.from(embed)
-.setDescription(righe.join("\n"));
-
-await message.edit({
-embeds: [nuovoEmbed]
-});
-
-}
 
 clearInterval(intervallo);
 
