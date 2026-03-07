@@ -148,7 +148,7 @@ tempo--;
 
 if (tempo <= 0) {
 
-const message = interaction.message;
+const message = interaction.client.trenoPannello;
 
 if (message && message.embeds.length > 0) {
 
@@ -272,6 +272,8 @@ if (interaction.isButton()) {
 
 if (interaction.customId === "treno_arrivo") {
 
+const pannello = interaction.message;
+
 const menu = new StringSelectMenuBuilder()
 .setCustomId("menu_treno_merce")
 .setPlaceholder("Seleziona la merce")
@@ -287,6 +289,8 @@ content: "🚂 Seleziona la merce in arrivo:",
 components: [row],
 ephemeral: true
 });
+
+interaction.client.trenoPannello = pannello;
 
 }
 
