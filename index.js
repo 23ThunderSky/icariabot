@@ -130,6 +130,61 @@ components: [row]
 
 }
 
+if (interaction.customId === "menu_ritiro_merce") {
+
+let merce = interaction.values[0];
+
+const pannello = interaction.message || interaction.client.trenoPannello;
+
+if (pannello && pannello.embeds.length > 0) {
+
+const embed = pannello.embeds[0];
+let testo = embed.description || "";
+
+let righe = testo.split("\n");
+
+righe = righe.map(riga => {
+
+const rigaLower = riga.toLowerCase();
+
+if (merce === "legna" && rigaLower.includes("legna")) {
+
+let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
+numero = Math.max(numero - 1, 0);
+
+return `🌲 Legna | ${numero}`;
+
+}
+
+if (merce === "grano" && rigaLower.includes("grano")) {
+
+let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
+numero = Math.max(numero - 1, 0);
+
+return `🌾 Grano | ${numero}`;
+
+}
+
+return riga;
+
+});
+
+const nuovoEmbed = EmbedBuilder.from(embed)
+.setDescription(righe.join("\n"));
+
+await pannello.edit({
+embeds: [nuovoEmbed]
+});
+
+}
+
+await interaction.reply({
+content: "📦 Merce consegnata!",
+ephemeral: true
+});
+
+}
+
 if (interaction.customId === "menu_treno_merce") {
 
 let merce = interaction.values[0];
@@ -273,6 +328,26 @@ content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`
 }
 
 if (interaction.isButton()) {
+
+if (interaction.customId === "treno_ritiro") {
+
+const menu = new StringSelectMenuBuilder()
+.setCustomId("menu_ritiro_merce")
+.setPlaceholder("Seleziona la merce da ritirare")
+.addOptions([
+{ label: "Consegna Legna", value: "legna", emoji: "🌲" },
+{ label: "Consegna Grano", value: "grano", emoji: "🌾" }
+]);
+
+const row = new ActionRowBuilder().addComponents(menu);
+
+await interaction.reply({
+content: "📦 Seleziona la merce da consegnare:",
+components: [row],
+ephemeral: true
+});
+
+}
 
 if (interaction.customId === "treno_arrivo") {
 
