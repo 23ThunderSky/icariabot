@@ -130,61 +130,6 @@ components: [row]
 
 }
 
-if (interaction.customId === "menu_ritiro_merce") {
-
-let merce = interaction.values[0];
-
-const pannello = interaction.message || interaction.client.trenoPannello;
-
-if (pannello && pannello.embeds.length > 0) {
-
-const embed = pannello.embeds[0];
-let testo = embed.description || "";
-
-let righe = testo.split("\n");
-
-righe = righe.map(riga => {
-
-const rigaLower = riga.toLowerCase();
-
-if (merce === "legna" && rigaLower.includes("legna")) {
-
-let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
-numero = Math.max(numero - 1, 0);
-
-return `🌲 Legna | ${numero}`;
-
-}
-
-if (merce === "grano" && rigaLower.includes("grano")) {
-
-let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
-numero = Math.max(numero - 1, 0);
-
-return `🌾 Grano | ${numero}`;
-
-}
-
-return riga;
-
-});
-
-const nuovoEmbed = EmbedBuilder.from(embed)
-.setDescription(righe.join("\n"));
-
-await pannello.edit({
-embeds: [nuovoEmbed]
-});
-
-}
-
-await interaction.reply({
-content: "📦 Merce consegnata!",
-ephemeral: true
-});
-
-}
-
 if (interaction.customId === "menu_treno_merce") {
 
 let merce = interaction.values[0];
@@ -329,46 +274,6 @@ content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`
 
 if (interaction.isButton()) {
 
-if (interaction.customId === "treno_ritiro") {
-
-let merce = interaction.values[0];
-
-interaction.client.caricoSelezionato = merce;
-
-const modal = new ModalBuilder()
-.setCustomId("modal_ritiro")
-.setTitle("📦 Dettagli consegna");
-
-const partenza = new TextInputBuilder()
-.setCustomId("partenza")
-.setLabel("Partenza")
-.setStyle(TextInputStyle.Short);
-
-const aziendaPartenza = new TextInputBuilder()
-.setCustomId("azienda_partenza")
-.setLabel("Azienda di partenza")
-.setStyle(TextInputStyle.Short);
-
-const destinazione = new TextInputBuilder()
-.setCustomId("destinazione")
-.setLabel("Destinazione")
-.setStyle(TextInputStyle.Short);
-
-const aziendaDestinazione = new TextInputBuilder()
-.setCustomId("azienda_destinazione")
-.setLabel("Azienda di destinazione")
-.setStyle(TextInputStyle.Short);
-
-const row1 = new ActionRowBuilder().addComponents(partenza);
-const row2 = new ActionRowBuilder().addComponents(aziendaPartenza);
-const row3 = new ActionRowBuilder().addComponents(destinazione);
-const row4 = new ActionRowBuilder().addComponents(aziendaDestinazione);
-
-modal.addComponents(row1, row2, row3, row4);
-
-await interaction.showModal(modal);
-}
-
 if (interaction.customId === "treno_arrivo") {
 
 const pannello = interaction.message;
@@ -461,39 +366,6 @@ await interaction.showModal(modal);
 
 if (interaction.isModalSubmit()) {
 
-if (interaction.customId === "modal_ritiro") {
-
-const partenza = interaction.fields.getTextInputValue("partenza");
-const aziendaPartenza = interaction.fields.getTextInputValue("azienda_partenza");
-const destinazione = interaction.fields.getTextInputValue("destinazione");
-const aziendaDestinazione = interaction.fields.getTextInputValue("azienda_destinazione");
-
-const merce = interaction.client.caricoSelezionato;
-
-let nomeCarico = merce === "legna" ? "🌲 Legna" : "🌾 Grano";
-
-const canale = await client.channels.fetch("1478813516835328042");
-
-await canale.send({
-content:
-`🚚 **Nuova consegna**
-
-📍 **Partenza:** ${partenza}
-🏢 **Azienda di partenza:** ${aziendaPartenza}
-
-📍 **Destinazione:** ${destinazione}
-🏢 **Azienda di destinazione:** ${aziendaDestinazione}
-
-📦 **Carico:** ${nomeCarico}`
-});
-
-await interaction.reply({
-content: "✅ Consegna registrata!",
-ephemeral: true
-});
-
-}
-
 if (interaction.customId === "modal_magazzino") {
 
 const titolo = interaction.fields.getTextInputValue("titolo");
@@ -566,89 +438,6 @@ const row = new ActionRowBuilder().addComponents(aumenta, diminuisci, modifica);
 await interaction.update({
 embeds: [embed],
 components: [row]
-});
-
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-
-const CANALE_RITIRO = "1478813516835328042";
-
-client.on("interactionCreate", async (interaction) => {
-
-    // MENU LEGNA / GRANO
-    if (interaction.isStringSelectMenu() && interaction.customId === "menu_ritiro") {
-
-        const carico = interaction.values[0];
-
-        const modal = new ModalBuilder()
-        .setCustomId(`ritiro_${carico}`)
-        .setTitle("Dati Ritiro Merci");
-
-        const partenza = new TextInputBuilder()
-        .setCustomId("partenza")
-        .setLabel("Partenza")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-        const aziendaPartenza = new TextInputBuilder()
-        .setCustomId("azienda_partenza")
-        .setLabel("Azienda di partenza")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-        const destinazione = new TextInputBuilder()
-        .setCustomId("destinazione")
-        .setLabel("Destinazione")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-        const aziendaDestinazione = new TextInputBuilder()
-        .setCustomId("azienda_destinazione")
-        .setLabel("Azienda di destinazione")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-        modal.addComponents(
-            new ActionRowBuilder().addComponents(partenza),
-            new ActionRowBuilder().addComponents(aziendaPartenza),
-            new ActionRowBuilder().addComponents(destinazione),
-            new ActionRowBuilder().addComponents(aziendaDestinazione)
-        );
-
-        await interaction.showModal(modal);
-    }
-
-    // INVIO MESSAGGIO NEL CANALE
-    if (interaction.isModalSubmit() && interaction.customId.startsWith("ritiro_")) {
-
-        const carico = interaction.customId.split("_")[1];
-
-        const partenza = interaction.fields.getTextInputValue("partenza");
-        const aziendaPartenza = interaction.fields.getTextInputValue("azienda_partenza");
-        const destinazione = interaction.fields.getTextInputValue("destinazione");
-        const aziendaDestinazione = interaction.fields.getTextInputValue("azienda_destinazione");
-
-        const canale = interaction.client.channels.cache.get(CANALE_RITIRO);
-
-        const messaggio = `
-🚚 **Nuovo Ritiro Merci**
-
-📍 **Partenza:** ${partenza}
-🏢 **Azienda di partenza:** ${aziendaPartenza}
-
-📍 **Destinazione:** ${destinazione}
-🏢 **Azienda di destinazione:** ${aziendaDestinazione}
-
-📦 **Carico:** ${carico}
-`;
-
-        canale.send(messaggio);
-
-        await interaction.reply({
-            content: "✅ Ritiro merci inviato!",
-            ephemeral: true
-        });
-    }
-
 });
 
 }
