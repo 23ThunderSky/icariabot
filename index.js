@@ -67,6 +67,7 @@ components: [row]
 
 }
 
+return;
 }
 
 if (interaction.isStringSelectMenu()) {
@@ -90,6 +91,7 @@ embeds: [embed],
 components: [row]
 });
 
+return;
 }
 
 if (interaction.values[0] === "treno") {
@@ -123,43 +125,12 @@ embeds: [embed],
 components: [row]
 });
 
+return;
 }
 
 }
 
 if (interaction.isButton()) {
-
-if (interaction.customId === "modifica_treno") {
-
-const embed = interaction.message.embeds[0]?.toJSON() || {};
-
-const titoloAttuale = embed.title || "";
-const contenutoAttuale = embed.description || "";
-
-const modal = new ModalBuilder()
-.setCustomId("modal_treno")
-.setTitle("Modifica Treno");
-
-const titolo = new TextInputBuilder()
-.setCustomId("titolo")
-.setLabel("Titolo")
-.setStyle(TextInputStyle.Short)
-.setValue(titoloAttuale);
-
-const contenuto = new TextInputBuilder()
-.setCustomId("contenuto")
-.setLabel("Contenuto")
-.setStyle(TextInputStyle.Paragraph)
-.setValue(contenutoAttuale);
-
-const row1 = new ActionRowBuilder().addComponents(titolo);
-const row2 = new ActionRowBuilder().addComponents(contenuto);
-
-modal.addComponents(row1, row2);
-
-await interaction.showModal(modal);
-
-}
 
 if (interaction.customId === "modifica_magazzino") {
 
@@ -191,6 +162,40 @@ modal.addComponents(row1, row2);
 
 await interaction.showModal(modal);
 
+return;
+}
+
+if (interaction.customId === "modifica_treno") {
+
+const embed = interaction.message.embeds[0]?.toJSON() || {};
+
+const titoloAttuale = embed.title || "";
+const contenutoAttuale = embed.description || "";
+
+const modal = new ModalBuilder()
+.setCustomId("modal_treno")
+.setTitle("Modifica Treno");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloAttuale);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(contenutoAttuale);
+
+const row1 = new ActionRowBuilder().addComponents(titolo);
+const row2 = new ActionRowBuilder().addComponents(contenuto);
+
+modal.addComponents(row1, row2);
+
+await interaction.showModal(modal);
+
+return;
 }
 
 }
@@ -227,7 +232,8 @@ embeds: [embed],
 components: [row]
 });
 
-} // <-- QUESTA MANCAVA
+return;
+}
 
 if (interaction.customId === "modal_treno") {
 
@@ -270,8 +276,6 @@ await interaction.update({
 embeds: [embed],
 components: [row]
 });
-
-}
 
 }
 
