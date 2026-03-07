@@ -25,7 +25,7 @@ new SlashCommandBuilder()
 .setDescription("Crea qualcosa")
 ].map(c => c.toJSON());
 
-client.once("clientReady", async () => {
+client.once("ready", async () => {
 
 console.log("Bot online");
 
@@ -67,12 +67,9 @@ components: [row]
 
 }
 
-return;
 }
 
 if (interaction.isStringSelectMenu()) {
-
-if (interaction.customId === "menu_crea") {
 
 if (interaction.values[0] === "magazzino") {
 
@@ -99,7 +96,7 @@ if (interaction.values[0] === "treno") {
 
 const embed = new EmbedBuilder()
 .setTitle("🚂 Treno")
-.setDescription("Lista merci del treno");
+.setDescription("Legna | 0\nGrano | 0");
 
 const aumenta = new ButtonBuilder()
 .setCustomId("treno_arrivo")
@@ -128,45 +125,55 @@ components: [row]
 
 }
 
-}
-
 if (interaction.customId === "menu_treno_merce") {
 
 let merce = interaction.values[0];
-let nome = merce === "legna" ? "🌲 Legna" : "🌾 Grano";
+let nome = merce === "legna" ? "Legna" : "Grano";
 
-let tempo = 10;
-
-const msg = await interaction.reply({
-content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`,
-fetchReply: true
-});
-
-const intervallo = setInterval(async () => {
-
-tempo--;
-
-if (tempo <= 0) {
-
-clearInterval(intervallo);
-
-await msg.edit({
-content: `🚂 Il treno con **${nome}** è arrivato con la merce!`
+await interaction.reply({
+content: `🚂 Il treno con **${nome}** arriverà fra **10 secondi**`
 });
 
 setTimeout(async () => {
-try { await msg.delete(); } catch {}
-}, 10000);
 
-return;
+let embed = interaction.message.embeds[0];
+let testo = embed.description;
+
+let righe = testo.split("\n");
+
+righe = righe.map(r => {
+
+if (r.toLowerCase().startsWith(nome.toLowerCase())) {
+
+let parti = r.split("|");
+let numero = parseInt(parti[1].trim());
+numero++;
+
+return `${nome} | ${numero}`;
 
 }
 
-await msg.edit({
-content: `🚂 Il treno con **${nome}** arriverà fra **${tempo} secondi**`
+return r;
+
 });
 
-}, 1000);
+const nuovoEmbed = new EmbedBuilder()
+.setTitle(embed.title)
+.setDescription(righe.join("\n"));
+
+await interaction.message.edit({
+embeds: [nuovoEmbed]
+});
+
+const msg = await interaction.followUp({
+content: "🚂 Il treno è arrivato con la merce!"
+});
+
+setTimeout(() => {
+msg.delete().catch(() => {});
+}, 10000);
+
+}, 10000);
 
 }
 
@@ -180,14 +187,22 @@ const menu = new StringSelectMenuBuilder()
 .setCustomId("menu_treno_merce")
 .setPlaceholder("Seleziona la merce")
 .addOptions([
-{ label: "Legna", value: "legna", emoji: "🌲" },
-{ label: "Grano", value: "grano", emoji: "🌾" }
+{
+label: "Legna",
+value: "legna",
+emoji: "🌲"
+},
+{
+label: "Grano",
+value: "grano",
+emoji: "🌾"
+}
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content: "🚂 Seleziona la merce in arrivo:",
+content: "Seleziona la merce del treno:",
 components: [row],
 ephemeral: true
 });
