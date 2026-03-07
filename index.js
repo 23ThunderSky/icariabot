@@ -8,9 +8,6 @@ ActionRowBuilder,
 StringSelectMenuBuilder,
 ButtonBuilder,
 ButtonStyle,
-ModalBuilder,
-TextInputBuilder,
-TextInputStyle,
 EmbedBuilder,
 Events
 } = require("discord.js");
@@ -19,12 +16,10 @@ const client = new Client({
 intents: [GatewayIntentBits.Guilds]
 });
 
-let pannelloTreno = null;
-
 const commands = [
 new SlashCommandBuilder()
 .setName("crea")
-.setDescription("Crea pannello")
+.setDescription("Crea il pannello del treno")
 ].map(c => c.toJSON());
 
 client.once("clientReady", async () => {
@@ -51,31 +46,8 @@ if (interaction.isChatInputCommand()) {
 
 if (interaction.commandName === "crea") {
 
-const menu = new StringSelectMenuBuilder()
-.setCustomId("menu_crea")
-.setPlaceholder("Seleziona")
-.addOptions([
-{ label: "Magazzino", value: "magazzino", emoji: "📦" },
-{ label: "Treno", value: "treno", emoji: "🚂" }
-]);
-
-const row = new ActionRowBuilder().addComponents(menu);
-
-await interaction.reply({
-content: "Seleziona cosa creare",
-components: [row]
-});
-
-}
-
-}
-
-if (interaction.isStringSelectMenu()) {
-
-if (interaction.values[0] === "treno") {
-
 const embed = new EmbedBuilder()
-.setTitle("🚂 Treno")
+.setTitle("🚂 Gestione Treno")
 .setDescription("Legna | 0\nGrano | 0");
 
 const arrivo = new ButtonBuilder()
@@ -97,81 +69,10 @@ const modifica = new ButtonBuilder()
 
 const row = new ActionRowBuilder().addComponents(arrivo, ritiro, modifica);
 
-const msg = await interaction.update({
+await interaction.reply({
 embeds: [embed],
-components: [row],
-fetchReply: true
+components: [row]
 });
-
-pannelloTreno = msg;
-
-}
-
-if (interaction.customId === "menu_treno") {
-
-const prodotto = interaction.values[0];
-
-let tempo = 10;
-
-const countdownMsg = await interaction.reply({
-content: `🚂 Il treno arriverà con **${prodotto}** tra **${tempo}** secondi...`,
-fetchReply: true
-});
-
-const intervallo = setInterval(async () => {
-
-tempo--;
-
-if (tempo > 0) {
-
-await countdownMsg.edit({
-content: `🚂 Il treno arriverà con **${prodotto}** tra **${tempo}** secondi...`
-});
-
-} else {
-
-clearInterval(intervallo);
-
-await countdownMsg.edit({
-content: `🚂 Il treno è arrivato con **${prodotto}**!`
-});
-
-if (!pannelloTreno) return;
-
-let embed = pannelloTreno.embeds[0];
-
-let testo = embed.description;
-let righe = testo.split("\n");
-
-righe = righe.map(riga => {
-
-if (riga.toLowerCase().includes(prodotto.toLowerCase())) {
-
-let numero = parseInt(riga.split("|")[1]) || 0;
-numero++;
-
-return `${prodotto} | ${numero}`;
-
-}
-
-return riga;
-
-});
-
-const nuovoEmbed = EmbedBuilder.from(embed)
-.setDescription(righe.join("\n"));
-
-await pannelloTreno.edit({
-embeds: [nuovoEmbed]
-});
-
-setTimeout(() => {
-countdownMsg.delete().catch(() => {});
-}, 10000);
-
-}
-
-}, 1000);
 
 }
 
@@ -185,15 +86,38 @@ const menu = new StringSelectMenuBuilder()
 .setCustomId("menu_treno")
 .setPlaceholder("Seleziona merce")
 .addOptions([
-{ label: "Legna", value: "Legna", emoji: "🪵" },
-{ label: "Grano", value: "Grano", emoji: "🌾" }
+{
+label: "Legna",
+value: "Legna",
+emoji: "🪵"
+},
+{
+label: "Grano",
+value: "Grano",
+emoji: "🌾"
+}
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content: "Che merce arriverà?",
+content: "🚂 Seleziona la merce che arriverà con il treno",
 components: [row],
+ephemeral: true
+});
+
+}
+
+}
+
+if (interaction.isStringSelectMenu()) {
+
+if (interaction.customId === "menu_treno") {
+
+const prodotto = interaction.values[0];
+
+await interaction.reply({
+content: `🚂 Il treno arriverà con **${prodotto}**`,
 ephemeral: true
 });
 
