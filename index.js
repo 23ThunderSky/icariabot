@@ -136,8 +136,11 @@ content: `🚂 Il treno con **${nome}** arriverà fra **10 secondi**`
 
 setTimeout(async () => {
 
-let embed = interaction.message.embeds[0];
-let testo = embed.description;
+let embed = interaction.message.embeds?.[0];
+
+if (!embed) return;
+
+let testo = embed.description || "";
 
 let righe = testo.split("\n");
 
