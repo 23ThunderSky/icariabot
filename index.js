@@ -221,19 +221,23 @@ const rigaLower = riga.toLowerCase();
 
 if (merce === "legna" && rigaLower.includes("legna")) {
 
-let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
-numero++;
+const parti = riga.split("|");
 
-return `🌲 Legna | ${numero}`;
+const nome = parti[0].trim();
+const numeroAttuale = parseInt(parti[1]?.trim()) || 0;
+
+return `${nome} | ${numeroAttuale + 1}`;
 
 }
 
 if (merce === "grano" && rigaLower.includes("grano")) {
 
-let numero = parseInt(riga.split("|")[1]?.trim()) || 0;
-numero++;
+const parti = riga.split("|");
 
-return `🌾 Grano | ${numero}`;
+const nome = parti[0].trim();
+const numeroAttuale = parseInt(parti[1]?.trim()) || 0;
+
+return `${nome} | ${numeroAttuale + 1}`;
 
 }
 
