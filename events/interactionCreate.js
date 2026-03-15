@@ -167,6 +167,34 @@ embeds:[embed],
 components:[new ActionRowBuilder().addComponents(consegna)]
 });
 
+/* ricrea pulsante CREA VIAGGIO in fondo */
+
+const channel = interaction.channel;
+
+const messages = await channel.messages.fetch({limit:20});
+
+const old = messages.find(m =>
+m.author.id === interaction.client.user.id &&
+m.components.length > 0 &&
+m.components[0].components[0].customId === "crea_viaggio"
+);
+
+if(old){
+try{ await old.delete(); }catch{}
+}
+
+const crea = new ButtonBuilder()
+.setCustomId("crea_viaggio")
+.setLabel("Crea Viaggio")
+.setStyle(ButtonStyle.Primary);
+
+const row = new ActionRowBuilder().addComponents(crea);
+
+await channel.send({
+content:"🚚 **Sistema Creazione Viaggi**",
+components:[row]
+});
+
 }
 
 }
