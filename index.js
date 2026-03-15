@@ -18,55 +18,26 @@ GatewayIntentBits.MessageContent
 ]
 });
 
-let ultimoMessaggioCreaViaggio = null;
+let ultimoMessaggioCreaViaggio=null;
 
-let magazzino = {
-latte:{count:0,max:10},
-pane:{count:0,max:10}
-};
+let magazzino={}
+let titoloMagazzino="📦 Magazzino"
+let descrizioneMagazzino=""
 
-let titoloMagazzino = "📦 MAGAZZINO";
-let descrizioneMagazzino = "Gestione prodotti";
+let messaggioMagazzino=null
 
 client.once("ready",()=>{
-console.log(`Bot online come ${client.user.tag}`);
-});
-
-async function inviaPulsanteViaggio(channel){
-
-if(ultimoMessaggioCreaViaggio){
-
-try{
-const msg = await channel.messages.fetch(ultimoMessaggioCreaViaggio);
-await msg.delete();
-}catch{}
-
-}
-
-const button = new ButtonBuilder()
-.setCustomId("crea_viaggio")
-.setLabel("Crea Viaggio")
-.setStyle(ButtonStyle.Primary);
-
-const row = new ActionRowBuilder().addComponents(button);
-
-const msg = await channel.send({
-content:"🚚 Sistema Creazione Viaggi",
-components:[row]
-});
-
-ultimoMessaggioCreaViaggio = msg.id;
-
-}
+console.log(`Bot online come ${client.user.tag}`)
+})
 
 function generaEmbedMagazzino(){
 
-const embed = new EmbedBuilder()
+const embed=new EmbedBuilder()
 .setTitle(titoloMagazzino)
 .setDescription(descrizioneMagazzino)
-.setColor("Blue");
+.setColor("Blue")
 
-const fields=[];
+const fields=[]
 
 for(const prodotto in magazzino){
 
@@ -74,23 +45,23 @@ fields.push({
 name:prodotto,
 value:`${magazzino[prodotto].count} / ${magazzino[prodotto].max}`,
 inline:true
-});
+})
 
 }
 
-embed.addFields(fields);
+embed.addFields(fields)
 
-return embed;
+return embed
 
 }
 
-function generaPulsantiMagazzino(){
+function generaBottoniMagazzino(){
 
-const rows=[];
+const rows=[]
 
 for(const prodotto in magazzino){
 
-const row = new ActionRowBuilder().addComponents(
+const row=new ActionRowBuilder().addComponents(
 
 new ButtonBuilder()
 .setCustomId(`meno_${prodotto}`)
@@ -102,13 +73,13 @@ new ButtonBuilder()
 .setLabel(`➕ ${prodotto}`)
 .setStyle(ButtonStyle.Secondary)
 
-);
+)
 
-rows.push(row);
+rows.push(row)
 
 }
 
-const extra = new ActionRowBuilder().addComponents(
+const extra=new ActionRowBuilder().addComponents(
 
 new ButtonBuilder()
 .setCustomId("latte_consegnato")
@@ -120,293 +91,200 @@ new ButtonBuilder()
 .setLabel("Modifica Magazzino")
 .setStyle(ButtonStyle.Primary)
 
-);
+)
 
-rows.push(extra);
+rows.push(extra)
 
-return rows;
-
-}
-
-client.on("messageCreate", async message=>{
-
-if(message.author.bot) return;
-
-if(message.content === "!ping"){
-message.reply("🏓 Pong!");
-}
-
-if(message.content === "!viaggio"){
-inviaPulsanteViaggio(message.channel);
-}
-
-if(message.content === "!magazzino"){
-
-const embed = generaEmbedMagazzino();
-const rows = generaPulsantiMagazzino();
-
-message.channel.send({
-embeds:[embed],
-components:rows
-});
+return rows
 
 }
 
-});
+client.on("messageCreate",async message=>{
 
-client.on("interactionCreate", async interaction=>{
+if(message.author.bot) return
+
+if(message.content==="!ping"){
+message.reply("🏓 Pong!")
+}
+
+if(message.content==="!magazzino"){
+
+const modal=new ModalBuilder()
+.setCustomId("crea_magazzino")
+.setTitle("Crea Magazzino")
+
+const prodotti=new TextInputBuilder()
+.setCustomId("prodotti")
+.setLabel("Prodotti (esempio: Latte:10)")
+.setStyle(TextInputStyle.Paragraph)
+.setRequired(true)
+
+modal.addComponents(
+new ActionRowBuilder().addComponents(prodotti)
+)
+
+await message.channel.send("Apri il modal per creare il magazzino")
+
+}
+
+})
+
+client.on("interactionCreate",async interaction=>{
 
 if(interaction.isButton()){
 
-const id = interaction.customId;
+const id=interaction.customId
 
 if(id.startsWith("piu_")){
 
-const prodotto=id.split("_")[1];
+const prodotto=id.split("_")[1]
 
 if(magazzino[prodotto].count < magazzino[prodotto].max){
-magazzino[prodotto].count++;
+magazzino[prodotto].count++
 }
 
 }
 
 if(id.startsWith("meno_")){
 
-const prodotto=id.split("_")[1];
+const prodotto=id.split("_")[1]
 
 if(magazzino[prodotto].count > 0){
-magazzino[prodotto].count--;
+magazzino[prodotto].count--
 }
 
 }
 
-if(id === "latte_consegnato"){
+if(id==="latte_consegnato"){
 
-let countdown=10;
+let countdown=10
 
 await interaction.reply({
-content:`🥛 Latte in arrivo... ${countdown}s`,
+content:`🥛 Latte consegnato tra ${countdown}s`,
 ephemeral:true
-});
+})
 
-const timer=setInterval(async()=>{
+const interval=setInterval(async()=>{
 
-countdown--;
+countdown--
 
 if(countdown<=0){
 
-clearInterval(timer);
+clearInterval(interval)
 
-if(magazzino.latte.count < magazzino.latte.max){
-magazzino.latte.count++;
+if(magazzino["Latte"] && magazzino["Latte"].count < magazzino["Latte"].max){
+magazzino["Latte"].count++
 }
 
-try{
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+})
+
 await interaction.editReply({
 content:"✅ Latte consegnato!"
-});
-}catch{}
+})
 
 }else{
 
-try{
 await interaction.editReply({
-content:`🥛 Latte in arrivo... ${countdown}s`
-});
-}catch{}
+content:`🥛 Latte consegnato tra ${countdown}s`
+})
 
 }
 
-},1000);
+},1000)
 
-return;
+return
 
 }
 
-if(id === "modifica_magazzino"){
+if(id==="modifica_magazzino"){
 
 const modal=new ModalBuilder()
-.setCustomId("modal_magazzino")
-.setTitle("Modifica Magazzino");
+.setCustomId("modifica_magazzino_modal")
+.setTitle("Modifica Magazzino")
 
 const titolo=new TextInputBuilder()
 .setCustomId("titolo")
 .setLabel("Titolo")
 .setStyle(TextInputStyle.Short)
-.setValue(titoloMagazzino);
+.setValue(titoloMagazzino)
 
 const descrizione=new TextInputBuilder()
 .setCustomId("descrizione")
 .setLabel("Descrizione")
 .setStyle(TextInputStyle.Paragraph)
-.setValue(descrizioneMagazzino);
+.setValue(descrizioneMagazzino)
 
 modal.addComponents(
 new ActionRowBuilder().addComponents(titolo),
 new ActionRowBuilder().addComponents(descrizione)
-);
+)
 
-await interaction.showModal(modal);
+await interaction.showModal(modal)
 
-return;
-
-}
-
-if(id.startsWith("consegna_")){
-
-const autista=id.split("_")[1];
-
-if(interaction.user.id !== autista){
-
-return interaction.reply({
-content:"Solo l'autista può consegnare.",
-ephemeral:true
-});
+return
 
 }
 
-const embed=EmbedBuilder.from(interaction.message.embeds[0]);
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+})
 
-embed.setColor("Yellow");
-
-embed.data.fields[5]={
-name:"📊 STATO VIAGGIO",
-value:"🟨 Consegnato - Magazzino da aggiornare",
-inline:false
-};
-
-const button=new ButtonBuilder()
-.setCustomId("magazzino_update")
-.setLabel("Magazzino aggiornato")
-.setStyle(ButtonStyle.Secondary);
-
-await interaction.update({
-embeds:[embed],
-components:[new ActionRowBuilder().addComponents(button)]
-});
-
-return;
-
-}
-
-if(id === "magazzino_update"){
-
-const embed=EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Green");
-
-embed.data.fields[5]={
-name:"📊 STATO VIAGGIO",
-value:"🟩 Documento registrato",
-inline:false
-};
-
-await interaction.update({
-embeds:[embed],
-components:[]
-});
-
-return;
-
-}
-
-const embed=generaEmbedMagazzino();
-
-await interaction.update({
-embeds:[embed],
-components:generaPulsantiMagazzino()
-});
+await interaction.deferUpdate()
 
 }
 
 if(interaction.isModalSubmit()){
 
-if(interaction.customId === "modal_magazzino"){
+if(interaction.customId==="crea_magazzino"){
 
-titoloMagazzino=interaction.fields.getTextInputValue("titolo");
-descrizioneMagazzino=interaction.fields.getTextInputValue("descrizione");
+magazzino={}
 
-await interaction.reply({
-content:"✅ Magazzino aggiornato",
-ephemeral:true
-});
+const righe=interaction.fields.getTextInputValue("prodotti").split("\n")
+
+for(const riga of righe){
+
+const [nome,max]=riga.split(":")
+
+magazzino[nome.trim()]={
+count:0,
+max:parseInt(max)
+}
 
 }
 
-if(interaction.customId === "modal_viaggio"){
+const embed=generaEmbedMagazzino()
 
-const partenza = interaction.fields.getTextInputValue("partenza");
-const aziendaPartenza = interaction.fields.getTextInputValue("azienda_partenza");
-const destinazione = interaction.fields.getTextInputValue("destinazione");
-const aziendaDest = interaction.fields.getTextInputValue("azienda_destinazione");
-const carico = interaction.fields.getTextInputValue("carico");
-
-const embed = new EmbedBuilder()
-
-.setTitle("🚚 DOCUMENTO DI TRASPORTO")
-
-.setColor("Red")
-
-.setDescription("━━━━━━━━━━━━━━━━━━━━")
-
-.addFields(
-
-{
-name:"👨‍✈️ AUTISTA",
-value:`${interaction.user}`,
-inline:false
-},
-
-{
-name:"📍 PARTENZA",
-value:`${partenza}\n${aziendaPartenza}`,
-inline:true
-},
-
-{
-name:"🏁 DESTINAZIONE",
-value:`${destinazione}\n${aziendaDest}`,
-inline:true
-},
-
-{
-name:"📦 CARICO",
-value:carico,
-inline:false
-},
-
-{
-name:"━━━━━━━━━━━━━━━━━━━━",
-value:" ",
-inline:false
-},
-
-{
-name:"📊 STATO VIAGGIO",
-value:"🟥 In corso",
-inline:false
-}
-
-)
-
-.setTimestamp();
-
-const button=new ButtonBuilder()
-.setCustomId(`consegna_${interaction.user.id}`)
-.setLabel("Segna consegna")
-.setStyle(ButtonStyle.Primary);
-
-await interaction.reply({
+messaggioMagazzino=await interaction.reply({
 embeds:[embed],
-components:[new ActionRowBuilder().addComponents(button)]
-});
+components:generaBottoniMagazzino(),
+fetchReply:true
+})
 
-await inviaPulsanteViaggio(interaction.channel);
+}
+
+if(interaction.customId==="modifica_magazzino_modal"){
+
+titoloMagazzino=interaction.fields.getTextInputValue("titolo")
+descrizioneMagazzino=interaction.fields.getTextInputValue("descrizione")
+
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+})
+
+await interaction.reply({
+content:"Magazzino aggiornato",
+ephemeral:true
+})
 
 }
 
 }
 
-});
+})
 
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN)
