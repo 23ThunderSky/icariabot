@@ -1,264 +1,57 @@
-import {
-Client,
-GatewayIntentBits,
-ActionRowBuilder,
-ButtonBuilder,
-ButtonStyle,
-ModalBuilder,
-TextInputBuilder,
-TextInputStyle,
-EmbedBuilder
-} from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
+import fs from "fs";
 
 const client = new Client({
-intents: [
+intents:[
 GatewayIntentBits.Guilds,
 GatewayIntentBits.GuildMessages,
 GatewayIntentBits.MessageContent
 ]
 });
 
-let ultimoMessaggioCreaViaggio = null;
+client.commands = new Map();
 
-client.once("ready", () => {
-console.log(`Bot online come ${client.user.tag}`);
-});
+/* carica comandi */
 
-async function inviaPulsanteViaggio(channel){
+const commandFiles = fs.readdirSync("./commands");
 
-if(ultimoMessaggioCreaViaggio){
+for(const file of commandFiles){
 
-try{
-const msg = await channel.messages.fetch(ultimoMessaggioCreaViaggio);
-await msg.delete();
-}catch{}
+const command = await import(`./commands/${file}`);
+
+client.commands.set(command.default.name, command.default);
 
 }
 
-const button = new ButtonBuilder()
-.setCustomId("crea_viaggio")
-.setLabel("Crea Viaggio")
-.setStyle(ButtonStyle.Primary);
-
-const row = new ActionRowBuilder().addComponents(button);
-
-const msg = await channel.send({
-content:"🚚 **Sistema Creazione Viaggi**",
-components:[row]
-});
-
-ultimoMessaggioCreaViaggio = msg.id;
-
-}
+/* messageCreate */
 
 client.on("messageCreate", async message => {
 
-if (message.author.bot) return;
+if(message.author.bot) return;
 
-if (message.content === "!ping") {
-message.reply("🏓 Pong!");
-}
+if(!message.content.startsWith("!")) return;
 
-if (message.content === "!viaggio") {
+const args = message.content.slice(1).split(" ");
+const cmd = args.shift().toLowerCase();
 
-await inviaPulsanteViaggio(message.channel);
+const command = client.commands.get(cmd);
 
+if(command){
+command.execute(message,client);
 }
 
 });
 
-client.on("interactionCreate", async interaction => {
+/* events */
 
-if (interaction.isButton()) {
+import interactionEvent from "./events/interactionCreate.js";
 
-if (interaction.customId === "crea_viaggio") {
-
-const modal = new ModalBuilder()
-.setCustomId("modal_viaggio")
-.setTitle("Crea nuovo viaggio");
-
-const partenza = new TextInputBuilder()
-.setCustomId("partenza")
-.setLabel("Partenza")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
-
-const aziendaPartenza = new TextInputBuilder()
-.setCustomId("azienda_partenza")
-.setLabel("Azienda di partenza")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
-
-const destinazione = new TextInputBuilder()
-.setCustomId("destinazione")
-.setLabel("Destinazione")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
-
-const aziendaDest = new TextInputBuilder()
-.setCustomId("azienda_destinazione")
-.setLabel("Azienda di destinazione")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
-
-const carico = new TextInputBuilder()
-.setCustomId("carico")
-.setLabel("Carico")
-.setStyle(TextInputStyle.Paragraph)
-.setRequired(true);
-
-modal.addComponents(
-new ActionRowBuilder().addComponents(partenza),
-new ActionRowBuilder().addComponents(aziendaPartenza),
-new ActionRowBuilder().addComponents(destinazione),
-new ActionRowBuilder().addComponents(aziendaDest),
-new ActionRowBuilder().addComponents(carico)
-);
-
-await interaction.showModal(modal);
-
-}
-
-if (interaction.customId.startsWith("consegna_")) {
-
-const autista = interaction.customId.split("_")[1];
-
-if(interaction.user.id !== autista){
-
-return interaction.reply({
-content:"Solo l'autista può confermare la consegna.",
-ephemeral:true
+client.on("interactionCreate",(interaction)=>{
+interactionEvent(interaction,client);
 });
 
-}
-
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Yellow");
-
-embed.data.fields[5] = {
-name:"📊 STATO VIAGGIO",
-value:"🟨 **Consegnato - Magazzino da aggiornare**",
-inline:false
-};
-
-const aggiorna = new ButtonBuilder()
-.setCustomId("magazzino_update")
-.setLabel("Magazzino aggiornato")
-.setStyle(ButtonStyle.Secondary);
-
-await interaction.update({
-embeds:[embed],
-components:[new ActionRowBuilder().addComponents(aggiorna)]
-});
-
-}
-
-if (interaction.customId === "magazzino_update") {
-
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Green");
-
-embed.data.fields[5] = {
-name:"📊 STATO VIAGGIO",
-value:"🟩 **Documento registrato**",
-inline:false
-};
-
-await interaction.update({
-embeds:[embed],
-components:[]
-});
-
-}
-
-}
-
-if (interaction.isModalSubmit()) {
-
-if (interaction.customId === "modal_viaggio") {
-
-const partenza = interaction.fields.getTextInputValue("partenza");
-const aziendaPartenza = interaction.fields.getTextInputValue("azienda_partenza");
-const destinazione = interaction.fields.getTextInputValue("destinazione");
-const aziendaDest = interaction.fields.getTextInputValue("azienda_destinazione");
-const carico = interaction.fields.getTextInputValue("carico");
-
-const embed = new EmbedBuilder()
-
-.setTitle("🚚 DOCUMENTO DI TRASPORTO")
-
-.setColor("Red")
-
-.setDescription(
-"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-"📋 **DETTAGLI VIAGGIO**\n" +
-"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-)
-
-.addFields(
-
-{
-name:"👨‍✈️ AUTISTA",
-value:`${interaction.user}`,
-inline:false
-},
-
-{
-name:"📍 PARTENZA",
-value:`**Luogo:** ${partenza}\n**Azienda:** ${aziendaPartenza}`,
-inline:true
-},
-
-{
-name:"🏁 DESTINAZIONE",
-value:`**Luogo:** ${destinazione}\n**Azienda:** ${aziendaDest}`,
-inline:true
-},
-
-{
-name:"📦 CARICO",
-value:`${carico}`,
-inline:false
-},
-
-{
-name:"━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-value:" ",
-inline:false
-},
-
-{
-name:"📊 STATO VIAGGIO",
-value:"🟥 **In corso**",
-inline:false
-}
-
-)
-
-.setFooter({
-text:"Sistema gestione trasporti"
-})
-
-.setTimestamp();
-
-const consegna = new ButtonBuilder()
-.setCustomId(`consegna_${interaction.user.id}`)
-.setLabel("Segna consegna")
-.setStyle(ButtonStyle.Primary);
-
-await interaction.reply({
-embeds:[embed],
-components:[new ActionRowBuilder().addComponents(consegna)]
-});
-
-await inviaPulsanteViaggio(interaction.channel);
-
-}
-
-}
-
+client.once("ready",()=>{
+console.log(`Bot online come ${client.user.tag}`);
 });
 
 client.login(process.env.TOKEN);
