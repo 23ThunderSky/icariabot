@@ -268,24 +268,7 @@ let titoloMagazzino = "📦 MAGAZZINO";
 let descrizioneMagazzino = "";
 let messaggioMagazzino = null;
 
-/* ---------------- REGISTRA SLASH COMMAND ---------------- */
-
-client.once("ready", async () => {
-
-try{
-
-await client.application.commands.create({
-name:"magazzino",
-description:"Crea il magazzino"
-});
-
-}catch(err){
-console.log(err);
-}
-
-});
-
-/* ---------------- EMBED MAGAZZINO ---------------- */
+/* --------- EMBED --------- */
 
 function generaEmbedMagazzino(){
 
@@ -298,7 +281,7 @@ const embed = new EmbedBuilder()
 for(const prodotto in magazzino){
 
 embed.addFields({
-name:prodotto,
+name: prodotto,
 value:`${magazzino[prodotto].count} / ${magazzino[prodotto].max}`,
 inline:true
 });
@@ -309,15 +292,15 @@ return embed;
 
 }
 
-/* ---------------- BOTTONI ---------------- */
+/* --------- BOTTONI --------- */
 
 function generaBottoniMagazzino(){
 
-const rows=[];
+const rows = [];
 
 for(const prodotto in magazzino){
 
-const row=new ActionRowBuilder().addComponents(
+const row = new ActionRowBuilder().addComponents(
 
 new ButtonBuilder()
 .setCustomId(`meno_${prodotto}`)
@@ -335,7 +318,7 @@ rows.push(row);
 
 }
 
-const modifica=new ActionRowBuilder().addComponents(
+const modifica = new ActionRowBuilder().addComponents(
 
 new ButtonBuilder()
 .setCustomId("modifica_magazzino")
@@ -350,19 +333,45 @@ return rows;
 
 }
 
-/* ---------------- SLASH COMMAND ---------------- */
+/* --------- COMANDO !magazzino --------- */
+
+client.on("messageCreate", async message => {
+
+if(message.author.bot) return;
+
+if(message.content === "!magazzino"){
+
+const button = new ButtonBuilder()
+.setCustomId("apri_magazzino_modal")
+.setLabel("Crea Magazzino")
+.setStyle(ButtonStyle.Primary);
+
+const row = new ActionRowBuilder().addComponents(button);
+
+await message.channel.send({
+content:"📦 **Creazione Magazzino**",
+components:[row]
+});
+
+}
+
+});
+
+/* --------- INTERACTION --------- */
 
 client.on("interactionCreate", async interaction => {
 
-if(!interaction.isChatInputCommand()) return;
+if(interaction.isButton()){
 
-if(interaction.commandName==="magazzino"){
+/* apertura modal */
 
-const modal=new ModalBuilder()
-.setCustomId("crea_magazzino")
+if(interaction.customId === "apri_magazzino_modal"){
+
+const modal = new ModalBuilder()
+.setCustomId("modal_magazzino")
 .setTitle("Crea Magazzino");
 
-const prodotti=new TextInputBuilder()
+const prodotti = new TextInputBuilder()
 .setCustomId("prodotti")
 .setLabel("Prodotti (es: Latte:10)")
 .setStyle(TextInputStyle.Paragraph)
@@ -376,69 +385,11 @@ await interaction.showModal(modal);
 
 }
 
-});
-
-/* ---------------- MODAL MAGAZZINO ---------------- */
-
-client.on("interactionCreate", async interaction => {
-
-if(!interaction.isModalSubmit()) return;
-
-if(interaction.customId==="crea_magazzino"){
-
-magazzino={};
-
-const righe=interaction.fields.getTextInputValue("prodotti").split("\n");
-
-for(const riga of righe){
-
-const [nome,max]=riga.split(":");
-
-magazzino[nome.trim()]={
-count:0,
-max:parseInt(max)
-};
-
-}
-
-messaggioMagazzino=await interaction.reply({
-embeds:[generaEmbedMagazzino()],
-components:generaBottoniMagazzino(),
-fetchReply:true
-});
-
-}
-
-if(interaction.customId==="modifica_magazzino_modal"){
-
-titoloMagazzino=interaction.fields.getTextInputValue("titolo");
-descrizioneMagazzino=interaction.fields.getTextInputValue("descrizione");
-
-await messaggioMagazzino.edit({
-embeds:[generaEmbedMagazzino()],
-components:generaBottoniMagazzino()
-});
-
-await interaction.reply({
-content:"Magazzino aggiornato",
-ephemeral:true
-});
-
-}
-
-});
-
-/* ---------------- BOTTONI MAGAZZINO ---------------- */
-
-client.on("interactionCreate", async interaction => {
-
-if(!interaction.isButton()) return;
-
-/* aumento */
+/* + prodotto */
 
 if(interaction.customId.startsWith("piu_")){
 
-const prodotto=interaction.customId.split("_")[1];
+const prodotto = interaction.customId.split("_")[1];
 
 if(magazzino[prodotto].count < magazzino[prodotto].max){
 magazzino[prodotto].count++;
@@ -446,11 +397,11 @@ magazzino[prodotto].count++;
 
 }
 
-/* diminuzione */
+/* - prodotto */
 
 if(interaction.customId.startsWith("meno_")){
 
-const prodotto=interaction.customId.split("_")[1];
+const prodotto = interaction.customId.split("_")[1];
 
 if(magazzino[prodotto].count > 0){
 magazzino[prodotto].count--;
@@ -458,21 +409,21 @@ magazzino[prodotto].count--;
 
 }
 
-/* modifica */
+/* modifica magazzino */
 
-if(interaction.customId==="modifica_magazzino"){
+if(interaction.customId === "modifica_magazzino"){
 
-const modal=new ModalBuilder()
+const modal = new ModalBuilder()
 .setCustomId("modifica_magazzino_modal")
 .setTitle("Modifica Magazzino");
 
-const titolo=new TextInputBuilder()
+const titolo = new TextInputBuilder()
 .setCustomId("titolo")
 .setLabel("Titolo")
 .setStyle(TextInputStyle.Short)
 .setValue(titoloMagazzino);
 
-const descrizione=new TextInputBuilder()
+const descrizione = new TextInputBuilder()
 .setCustomId("descrizione")
 .setLabel("Contenuto")
 .setStyle(TextInputStyle.Paragraph)
@@ -500,8 +451,60 @@ components:generaBottoniMagazzino()
 
 await interaction.deferUpdate();
 
+}
+
+/* --------- MODAL --------- */
+
+if(interaction.isModalSubmit()){
+
+/* creazione */
+
+if(interaction.customId === "modal_magazzino"){
+
+magazzino = {};
+
+const righe = interaction.fields.getTextInputValue("prodotti").split("\n");
+
+for(const riga of righe){
+
+const [nome,max] = riga.split(":");
+
+magazzino[nome.trim()] = {
+count:0,
+max:parseInt(max)
+};
+
+}
+
+messaggioMagazzino = await interaction.reply({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino(),
+fetchReply:true
 });
 
-//
+}
+
+/* modifica */
+
+if(interaction.customId === "modifica_magazzino_modal"){
+
+titoloMagazzino = interaction.fields.getTextInputValue("titolo");
+descrizioneMagazzino = interaction.fields.getTextInputValue("descrizione");
+
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+});
+
+await interaction.reply({
+content:"Magazzino aggiornato",
+ephemeral:true
+});
+
+}
+
+}
+
+});
 
 client.login(process.env.TOKEN);
