@@ -1,7 +1,6 @@
 {
-  "name": "viaggi-bot",
+  "name": "discord-bot",
   "version": "1.0.0",
-  "description": "Bot gestione viaggi Discord",
   "type": "module",
   "main": "index.js",
   "scripts": {
