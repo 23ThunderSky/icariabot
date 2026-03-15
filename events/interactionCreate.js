@@ -14,6 +14,39 @@ export default async function(interaction){
 
 if(interaction.isButton()){
 
+/* MAGAZZINO BOTTONI */
+
+if(interaction.customId.startsWith("mag_")){
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+let lines = embed.data.description.split("\n");
+
+const parts = interaction.customId.split("_");
+const type = parts[1];
+const prodotto = parts.slice(2).join("_");
+
+lines = lines.map(line => {
+
+if(!line.includes(`**${prodotto}**`)) return line;
+
+let num = parseInt(line.split(": ")[1]);
+
+if(type === "plus") num++;
+if(type === "minus") num = Math.max(0,num-1);
+
+return `**${prodotto}**: ${num}`;
+
+});
+
+embed.setDescription(lines.join("\n"));
+
+await interaction.update({
+embeds:[embed]
+});
+
+}
+
 /* CREA VIAGGIO */
 
 if(interaction.customId === "crea_viaggio"){
