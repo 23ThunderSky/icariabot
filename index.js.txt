@@ -1,0 +1,47 @@
+import { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } from "discord.js";
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Test bot")
+].map(command => command.toJSON());
+
+client.once("ready", async () => {
+
+  console.log(`Bot online come ${client.user.tag}`);
+
+  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
+  try {
+
+    await rest.put(
+      Routes.applicationGuildCommands(
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
+      ),
+      { body: commands }
+    );
+
+    console.log("Comandi slash registrati");
+
+  } catch (error) {
+    console.error(error);
+  }
+
+});
+
+client.on("interactionCreate", async interaction => {
+
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === "ping") {
+    await interaction.reply("🏓 Pong!");
+  }
+
+});
+
+client.login(process.env.TOKEN);
