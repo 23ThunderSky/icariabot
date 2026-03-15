@@ -18,9 +18,38 @@ GatewayIntentBits.MessageContent
 ]
 });
 
+let ultimoMessaggioCreaViaggio = null;
+
 client.once("ready", () => {
 console.log(`Bot online come ${client.user.tag}`);
 });
+
+async function inviaPulsanteViaggio(channel){
+
+if(ultimoMessaggioCreaViaggio){
+
+try{
+const msg = await channel.messages.fetch(ultimoMessaggioCreaViaggio);
+await msg.delete();
+}catch{}
+
+}
+
+const button = new ButtonBuilder()
+.setCustomId("crea_viaggio")
+.setLabel("Crea Viaggio")
+.setStyle(ButtonStyle.Primary);
+
+const row = new ActionRowBuilder().addComponents(button);
+
+const msg = await channel.send({
+content:"Premi per creare un viaggio",
+components:[row]
+});
+
+ultimoMessaggioCreaViaggio = msg.id;
+
+}
 
 client.on("messageCreate", async message => {
 
@@ -32,17 +61,7 @@ message.reply("🏓 Pong!");
 
 if (message.content === "!viaggio") {
 
-const button = new ButtonBuilder()
-.setCustomId("crea_viaggio")
-.setLabel("Crea Viaggio")
-.setStyle(ButtonStyle.Primary);
-
-const row = new ActionRowBuilder().addComponents(button);
-
-message.channel.send({
-content: "Premi per creare un viaggio",
-components: [row]
-});
+await inviaPulsanteViaggio(message.channel);
 
 }
 
@@ -88,17 +107,69 @@ const carico = new TextInputBuilder()
 .setStyle(TextInputStyle.Paragraph)
 .setRequired(true);
 
-const rows = [
+modal.addComponents(
 new ActionRowBuilder().addComponents(partenza),
 new ActionRowBuilder().addComponents(aziendaPartenza),
 new ActionRowBuilder().addComponents(destinazione),
 new ActionRowBuilder().addComponents(aziendaDest),
 new ActionRowBuilder().addComponents(carico)
-];
-
-modal.addComponents(...rows);
+);
 
 await interaction.showModal(modal);
+
+}
+
+if (interaction.customId.startsWith("consegna_")) {
+
+const autista = interaction.customId.split("_")[1];
+
+if(interaction.user.id !== autista){
+
+return interaction.reply({
+content:"Solo l'autista può confermare la consegna.",
+ephemeral:true
+});
+
+}
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+embed.setColor("Yellow");
+
+embed.data.fields[4] = {
+name:"📊 Stato viaggio",
+value:"🟨 Consegnato - Magazzino da aggiornare",
+inline:false
+};
+
+const aggiorna = new ButtonBuilder()
+.setCustomId("magazzino_update")
+.setLabel("Magazzino aggiornato")
+.setStyle(ButtonStyle.Secondary);
+
+await interaction.update({
+embeds:[embed],
+components:[new ActionRowBuilder().addComponents(aggiorna)]
+});
+
+}
+
+if (interaction.customId === "magazzino_update") {
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+embed.setColor("Green");
+
+embed.data.fields[4] = {
+name:"📊 Stato viaggio",
+value:"🟩 Documento registrato",
+inline:false
+};
+
+await interaction.update({
+embeds:[embed],
+components:[]
+});
 
 }
 
@@ -123,33 +194,33 @@ const embed = new EmbedBuilder()
 .addFields(
 
 {
-name: "👨‍✈️ Autista",
-value: interaction.user.toString(),
-inline: false
+name:"👨‍✈️ Autista",
+value:interaction.user.toString(),
+inline:false
 },
 
 {
-name: "📍 Partenza",
-value: `${partenza}\n🏢 ${aziendaPartenza}`,
-inline: true
+name:"📍 Partenza",
+value:`${partenza}\n🏢 ${aziendaPartenza}`,
+inline:true
 },
 
 {
-name: "🏁 Destinazione",
-value: `${destinazione}\n🏢 ${aziendaDest}`,
-inline: true
+name:"🏁 Destinazione",
+value:`${destinazione}\n🏢 ${aziendaDest}`,
+inline:true
 },
 
 {
-name: "📦 Carico",
-value: carico,
-inline: false
+name:"📦 Carico",
+value:carico,
+inline:false
 },
 
 {
-name: "📊 Stato viaggio",
-value: "🟥 In corso",
-inline: false
+name:"📊 Stato viaggio",
+value:"🟥 In corso",
+inline:false
 }
 
 )
@@ -161,72 +232,12 @@ const consegna = new ButtonBuilder()
 .setLabel("Segna consegna")
 .setStyle(ButtonStyle.Primary);
 
-const row = new ActionRowBuilder().addComponents(consegna);
-
 await interaction.reply({
-embeds: [embed],
-components: [row]
+embeds:[embed],
+components:[new ActionRowBuilder().addComponents(consegna)]
 });
 
-}
-
-}
-
-if (interaction.isButton()) {
-
-if (interaction.customId.startsWith("consegna_")) {
-
-const autista = interaction.customId.split("_")[1];
-
-if (interaction.user.id !== autista) {
-
-return interaction.reply({
-content: "Solo l'autista può confermare la consegna.",
-ephemeral: true
-});
-
-}
-
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Yellow");
-
-embed.data.fields[4] = {
-name: "📊 Stato viaggio",
-value: "🟨 Consegnato - Magazzino da aggiornare",
-inline: false
-};
-
-const aggiorna = new ButtonBuilder()
-.setCustomId("magazzino_update")
-.setLabel("Magazzino aggiornato")
-.setStyle(ButtonStyle.Secondary);
-
-const row = new ActionRowBuilder().addComponents(aggiorna);
-
-await interaction.update({
-embeds: [embed],
-components: [row]
-});
-
-}
-
-if (interaction.customId === "magazzino_update") {
-
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Green");
-
-embed.data.fields[4] = {
-name: "📊 Stato viaggio",
-value: "🟩 Documento registrato",
-inline: false
-};
-
-await interaction.update({
-embeds: [embed],
-components: []
-});
+await inviaPulsanteViaggio(interaction.channel);
 
 }
 
