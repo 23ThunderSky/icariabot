@@ -1,21 +1,28 @@
-import {
-ActionRowBuilder,
-ButtonBuilder,
-ButtonStyle
-} from "discord.js";
+export default {
 
-let ultimoMessaggioCreaViaggio = null;
+name:"viaggio",
 
-async function inviaPulsanteViaggio(channel){
+async execute(message,client){
 
-if(ultimoMessaggioCreaViaggio){
+const channel = message.channel;
 
-try{
-const msg = await channel.messages.fetch(ultimoMessaggioCreaViaggio);
-await msg.delete();
-}catch{}
+/* cancella vecchio pulsante */
 
+const messages = await channel.messages.fetch({limit:20});
+
+const old = messages.find(m =>
+m.author.id === client.user.id &&
+m.components.length > 0 &&
+m.components[0].components[0].customId === "crea_viaggio"
+);
+
+if(old){
+try{ await old.delete(); }catch{}
 }
+
+/* crea nuovo pulsante */
+
+const {ActionRowBuilder,ButtonBuilder,ButtonStyle} = await import("discord.js");
 
 const button = new ButtonBuilder()
 .setCustomId("crea_viaggio")
@@ -24,25 +31,11 @@ const button = new ButtonBuilder()
 
 const row = new ActionRowBuilder().addComponents(button);
 
-const msg = await channel.send({
+await channel.send({
 content:"🚚 **Sistema Creazione Viaggi**",
 components:[row]
 });
 
-ultimoMessaggioCreaViaggio = msg.id;
-
 }
 
-export default {
-
-name:"viaggio",
-
-async execute(message){
-
-await inviaPulsanteViaggio(message.channel);
-
 }
-
-};
-
-export {inviaPulsanteViaggio};
