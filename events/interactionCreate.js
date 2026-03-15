@@ -10,7 +10,11 @@ EmbedBuilder
 
 export default async function(interaction){
 
+/* BOTTONI */
+
 if(interaction.isButton()){
+
+/* CREA VIAGGIO */
 
 if(interaction.customId === "crea_viaggio"){
 
@@ -60,7 +64,73 @@ await interaction.showModal(modal);
 
 }
 
+/* SEGNA CONSEGNA */
+
+if(interaction.customId.startsWith("consegna_")){
+
+const autista = interaction.customId.split("_")[1];
+
+if(interaction.user.id !== autista){
+
+return interaction.reply({
+content:"Solo l'autista può confermare la consegna.",
+ephemeral:true
+});
+
 }
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+embed.setColor("Yellow");
+
+const fields = embed.data.fields;
+
+fields[4] = {
+name:"📊 STATO",
+value:"🟨 Consegnato - Magazzino da aggiornare"
+};
+
+embed.setFields(fields);
+
+const aggiorna = new ButtonBuilder()
+.setCustomId("magazzino_update")
+.setLabel("Magazzino aggiornato")
+.setStyle(ButtonStyle.Secondary);
+
+await interaction.update({
+embeds:[embed],
+components:[new ActionRowBuilder().addComponents(aggiorna)]
+});
+
+}
+
+/* MAGAZZINO AGGIORNATO */
+
+if(interaction.customId === "magazzino_update"){
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+embed.setColor("Green");
+
+const fields = embed.data.fields;
+
+fields[4] = {
+name:"📊 STATO",
+value:"🟩 Documento registrato"
+};
+
+embed.setFields(fields);
+
+await interaction.update({
+embeds:[embed],
+components:[]
+});
+
+}
+
+}
+
+/* MODAL */
 
 if(interaction.isModalSubmit()){
 
@@ -75,7 +145,6 @@ const carico = interaction.fields.getTextInputValue("carico");
 const embed = new EmbedBuilder()
 
 .setTitle("🚚 DOCUMENTO DI TRASPORTO")
-
 .setColor("Red")
 
 .addFields(
