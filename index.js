@@ -20,9 +20,20 @@ GatewayIntentBits.MessageContent
 
 let ultimoMessaggioCreaViaggio = null;
 
+/* ---------------- MAGAZZINO ---------------- */
+
+let magazzino = {};
+let titoloMagazzino = "📦 MAGAZZINO";
+let descrizioneMagazzino = "";
+let messaggioMagazzino = null;
+
+/* ---------------- READY ---------------- */
+
 client.once("ready", () => {
 console.log(`Bot online come ${client.user.tag}`);
 });
+
+/* ---------------- PULSANTE VIAGGIO ---------------- */
 
 async function inviaPulsanteViaggio(channel){
 
@@ -51,6 +62,73 @@ ultimoMessaggioCreaViaggio = msg.id;
 
 }
 
+/* ---------------- EMBED MAGAZZINO ---------------- */
+
+function generaEmbedMagazzino(){
+
+const embed = new EmbedBuilder()
+.setTitle(titoloMagazzino)
+.setDescription(descrizioneMagazzino)
+.setColor("Blue")
+.setTimestamp();
+
+for(const prodotto in magazzino){
+
+embed.addFields({
+name: prodotto,
+value:`${magazzino[prodotto].count} / ${magazzino[prodotto].max}`,
+inline:true
+});
+
+}
+
+return embed;
+
+}
+
+/* ---------------- BOTTONI MAGAZZINO ---------------- */
+
+function generaBottoniMagazzino(){
+
+const rows = [];
+
+for(const prodotto in magazzino){
+
+const row = new ActionRowBuilder().addComponents(
+
+new ButtonBuilder()
+.setCustomId(`meno_${prodotto}`)
+.setLabel(`➖ ${prodotto}`)
+.setStyle(ButtonStyle.Secondary),
+
+new ButtonBuilder()
+.setCustomId(`piu_${prodotto}`)
+.setLabel(`➕ ${prodotto}`)
+.setStyle(ButtonStyle.Secondary)
+
+);
+
+rows.push(row);
+
+}
+
+const modifica = new ActionRowBuilder().addComponents(
+
+new ButtonBuilder()
+.setCustomId("modifica_magazzino")
+.setLabel("✏️ Modifica Magazzino")
+.setStyle(ButtonStyle.Primary)
+
+);
+
+rows.push(modifica);
+
+return rows;
+
+}
+
+/* ---------------- MESSAGE CREATE ---------------- */
+
 client.on("messageCreate", async message => {
 
 if (message.author.bot) return;
@@ -60,16 +138,58 @@ message.reply("🏓 Pong!");
 }
 
 if (message.content === "!viaggio") {
-
 await inviaPulsanteViaggio(message.channel);
+}
+
+/* ----------- MAGAZZINO ----------- */
+
+if (message.content === "!magazzino") {
+
+const modal = new ModalBuilder()
+.setCustomId("crea_magazzino")
+.setTitle("Crea Magazzino");
+
+const prodotti = new TextInputBuilder()
+.setCustomId("prodotti")
+.setLabel("Prodotti (es: Latte:10)")
+.setStyle(TextInputStyle.Paragraph)
+.setRequired(true);
+
+modal.addComponents(
+new ActionRowBuilder().addComponents(prodotti)
+);
+
+await message.reply({
+content:"Apri il modal per creare il magazzino",
+components:[
+new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("apri_modal_magazzino")
+.setLabel("Apri")
+.setStyle(ButtonStyle.Primary)
+)
+]
+});
+
+client.once("interactionCreate", async i => {
+
+if(i.customId === "apri_modal_magazzino"){
+await i.showModal(modal);
+}
+
+});
 
 }
 
 });
 
+/* ---------------- INTERACTION ---------------- */
+
 client.on("interactionCreate", async interaction => {
 
 if (interaction.isButton()) {
+
+/* ----------- CREA VIAGGIO ----------- */
 
 if (interaction.customId === "crea_viaggio") {
 
@@ -80,32 +200,27 @@ const modal = new ModalBuilder()
 const partenza = new TextInputBuilder()
 .setCustomId("partenza")
 .setLabel("Partenza")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
+.setStyle(TextInputStyle.Short);
 
 const aziendaPartenza = new TextInputBuilder()
 .setCustomId("azienda_partenza")
 .setLabel("Azienda di partenza")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
+.setStyle(TextInputStyle.Short);
 
 const destinazione = new TextInputBuilder()
 .setCustomId("destinazione")
 .setLabel("Destinazione")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
+.setStyle(TextInputStyle.Short);
 
 const aziendaDest = new TextInputBuilder()
 .setCustomId("azienda_destinazione")
-.setLabel("Azienda di destinazione")
-.setStyle(TextInputStyle.Short)
-.setRequired(true);
+.setLabel("Azienda destinazione")
+.setStyle(TextInputStyle.Short);
 
 const carico = new TextInputBuilder()
 .setCustomId("carico")
 .setLabel("Carico")
-.setStyle(TextInputStyle.Paragraph)
-.setRequired(true);
+.setStyle(TextInputStyle.Paragraph);
 
 modal.addComponents(
 new ActionRowBuilder().addComponents(partenza),
@@ -119,63 +234,121 @@ await interaction.showModal(modal);
 
 }
 
-if (interaction.customId.startsWith("consegna_")) {
+/* ----------- MAGAZZINO BOTTONI ----------- */
 
-const autista = interaction.customId.split("_")[1];
+if(interaction.customId.startsWith("piu_")){
 
-if(interaction.user.id !== autista){
+const prodotto = interaction.customId.split("_")[1];
 
-return interaction.reply({
-content:"Solo l'autista può confermare la consegna.",
+if(magazzino[prodotto].count < magazzino[prodotto].max){
+magazzino[prodotto].count++;
+}
+
+}
+
+if(interaction.customId.startsWith("meno_")){
+
+const prodotto = interaction.customId.split("_")[1];
+
+if(magazzino[prodotto].count > 0){
+magazzino[prodotto].count--;
+}
+
+}
+
+if(interaction.customId === "modifica_magazzino"){
+
+const modal = new ModalBuilder()
+.setCustomId("modifica_magazzino_modal")
+.setTitle("Modifica Magazzino");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(titoloMagazzino);
+
+const descrizione = new TextInputBuilder()
+.setCustomId("descrizione")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(descrizioneMagazzino);
+
+modal.addComponents(
+new ActionRowBuilder().addComponents(titolo),
+new ActionRowBuilder().addComponents(descrizione)
+);
+
+await interaction.showModal(modal);
+
+return;
+
+}
+
+if(messaggioMagazzino){
+
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+});
+
+}
+
+await interaction.deferUpdate();
+
+}
+
+/* ---------------- MODAL ---------------- */
+
+if (interaction.isModalSubmit()) {
+
+/* ----------- CREA MAGAZZINO ----------- */
+
+if(interaction.customId === "crea_magazzino"){
+
+magazzino = {};
+
+const righe = interaction.fields.getTextInputValue("prodotti").split("\n");
+
+for(const riga of righe){
+
+const [nome,max] = riga.split(":");
+
+magazzino[nome.trim()] = {
+count:0,
+max:parseInt(max)
+};
+
+}
+
+messaggioMagazzino = await interaction.reply({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino(),
+fetchReply:true
+});
+
+}
+
+/* ----------- MODIFICA MAGAZZINO ----------- */
+
+if(interaction.customId === "modifica_magazzino_modal"){
+
+titoloMagazzino = interaction.fields.getTextInputValue("titolo");
+descrizioneMagazzino = interaction.fields.getTextInputValue("descrizione");
+
+await messaggioMagazzino.edit({
+embeds:[generaEmbedMagazzino()],
+components:generaBottoniMagazzino()
+});
+
+await interaction.reply({
+content:"Magazzino aggiornato",
 ephemeral:true
 });
 
 }
 
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Yellow");
-
-embed.data.fields[5] = {
-name:"📊 STATO VIAGGIO",
-value:"🟨 **Consegnato - Magazzino da aggiornare**",
-inline:false
-};
-
-const aggiorna = new ButtonBuilder()
-.setCustomId("magazzino_update")
-.setLabel("Magazzino aggiornato")
-.setStyle(ButtonStyle.Secondary);
-
-await interaction.update({
-embeds:[embed],
-components:[new ActionRowBuilder().addComponents(aggiorna)]
-});
-
-}
-
-if (interaction.customId === "magazzino_update") {
-
-const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
-embed.setColor("Green");
-
-embed.data.fields[5] = {
-name:"📊 STATO VIAGGIO",
-value:"🟩 **Documento registrato**",
-inline:false
-};
-
-await interaction.update({
-embeds:[embed],
-components:[]
-});
-
-}
-
-}
-
-if (interaction.isModalSubmit()) {
+/* ----------- CREA VIAGGIO ----------- */
 
 if (interaction.customId === "modal_viaggio") {
 
@@ -191,11 +364,7 @@ const embed = new EmbedBuilder()
 
 .setColor("Red")
 
-.setDescription(
-"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-"📋 **DETTAGLI VIAGGIO**\n" +
-"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-)
+.setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 .addFields(
 
@@ -207,39 +376,29 @@ inline:false
 
 {
 name:"📍 PARTENZA",
-value:`**Luogo:** ${partenza}\n**Azienda:** ${aziendaPartenza}`,
+value:`${partenza}\n${aziendaPartenza}`,
 inline:true
 },
 
 {
 name:"🏁 DESTINAZIONE",
-value:`**Luogo:** ${destinazione}\n**Azienda:** ${aziendaDest}`,
+value:`${destinazione}\n${aziendaDest}`,
 inline:true
 },
 
 {
 name:"📦 CARICO",
-value:`${carico}`,
+value:carico,
 inline:false
 },
 
 {
-name:"━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-value:" ",
-inline:false
-},
-
-{
-name:"📊 STATO VIAGGIO",
-value:"🟥 **In corso**",
+name:"📊 STATO",
+value:"🟥 In corso",
 inline:false
 }
 
 )
-
-.setFooter({
-text:"Sistema gestione trasporti"
-})
 
 .setTimestamp();
 
