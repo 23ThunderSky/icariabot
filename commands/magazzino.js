@@ -11,7 +11,11 @@ name: "magazzino",
 
 async execute(message){
 
-const prodotti = message.content.split(" ").slice(1);
+const prodotti = message.content
+.replace("!magazzino","")
+.split(",")
+.map(p => p.trim())
+.filter(p => p.length > 0);
 
 if(prodotti.length === 0){
 return message.reply("Scrivi i prodotti dopo !magazzino");
