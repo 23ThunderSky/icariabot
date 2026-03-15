@@ -18,7 +18,7 @@ const prodotti = message.content
 .filter(p => p.length > 0);
 
 if(prodotti.length === 0){
-return message.reply("Usa: !magazzino prodotto:max, prodotto:max");
+return message.reply("Usa: !magazzino acqua:10, pane:5, latte:8");
 }
 
 if(prodotti.length > 5){
@@ -33,7 +33,7 @@ for(const p of prodotti){
 const parts = p.split(":");
 
 const nome = parts[0].toLowerCase();
-const max = parseInt(parts[1]) || 100;
+const max = parseInt(parts[1]) || 10;
 
 descrizione += `**${nome}**: 0 / ${max}\n`;
 

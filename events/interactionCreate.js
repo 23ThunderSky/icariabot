@@ -14,12 +14,44 @@ export default async function(interaction){
 
 if(interaction.isButton()){
 
-/* MAGAZZINO BOTTONI */
+/* MODIFICA MAGAZZINO */
+
+if(interaction.customId === "mag_modifica"){
+
+const embed = interaction.message.embeds[0];
+
+const modal = new ModalBuilder()
+.setCustomId("modal_modifica_magazzino")
+.setTitle("Modifica Magazzino");
+
+const titolo = new TextInputBuilder()
+.setCustomId("titolo")
+.setLabel("Titolo")
+.setStyle(TextInputStyle.Short)
+.setValue(embed.title ?? "")
+.setRequired(true);
+
+const contenuto = new TextInputBuilder()
+.setCustomId("contenuto")
+.setLabel("Contenuto")
+.setStyle(TextInputStyle.Paragraph)
+.setValue(embed.description ?? "")
+.setRequired(true);
+
+modal.addComponents(
+new ActionRowBuilder().addComponents(titolo),
+new ActionRowBuilder().addComponents(contenuto)
+);
+
+return interaction.showModal(modal);
+
+}
+
+/* BOTTONI MAGAZZINO + - */
 
 if(interaction.customId.startsWith("mag_")){
 
 const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
 let lines = embed.data.description.split("\n");
 
 const parts = interaction.customId.split("_");
@@ -30,18 +62,19 @@ lines = lines.map(line => {
 
 if(!line.includes(`**${prodotto}**`)) return line;
 
-let num = parseInt(line.split(": ")[1]);
+const data = line.split(": ")[1];
+let [num,max] = data.split(" / ").map(n => parseInt(n));
 
-if(type === "plus") num++;
-if(type === "minus") num = Math.max(0,num-1);
+if(type === "plus") num = Math.min(max, num + 1);
+if(type === "minus") num = Math.max(0, num - 1);
 
-return `**${prodotto}**: ${num}`;
+return `**${prodotto}**: ${num} / ${max}`;
 
 });
 
 embed.setDescription(lines.join("\n"));
 
-await interaction.update({
+return interaction.update({
 embeds:[embed]
 });
 
@@ -113,7 +146,6 @@ ephemeral:true
 }
 
 const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
 embed.setColor("Yellow");
 
 const fields = embed.data.fields;
@@ -142,7 +174,6 @@ components:[new ActionRowBuilder().addComponents(aggiorna)]
 if(interaction.customId === "magazzino_update"){
 
 const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-
 embed.setColor("Green");
 
 const fields = embed.data.fields;
@@ -167,6 +198,26 @@ components:[]
 
 if(interaction.isModalSubmit()){
 
+/* MODIFICA MAGAZZINO */
+
+if(interaction.customId === "modal_modifica_magazzino"){
+
+const titolo = interaction.fields.getTextInputValue("titolo");
+const contenuto = interaction.fields.getTextInputValue("contenuto");
+
+const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+
+embed.setTitle(titolo);
+embed.setDescription(contenuto);
+
+return interaction.update({
+embeds:[embed]
+});
+
+}
+
+/* CREAZIONE VIAGGIO */
+
 if(interaction.customId==="modal_viaggio"){
 
 const partenza = interaction.fields.getTextInputValue("partenza");
@@ -176,10 +227,8 @@ const aziendaDest = interaction.fields.getTextInputValue("azienda_destinazione")
 const carico = interaction.fields.getTextInputValue("carico");
 
 const embed = new EmbedBuilder()
-
 .setTitle("🚚 DOCUMENTO DI TRASPORTO")
 .setColor("Red")
-
 .addFields(
 {name:"👨‍✈️ AUTISTA",value:`${interaction.user}`},
 {name:"📍 PARTENZA",value:`${partenza}\n${aziendaPartenza}`,inline:true},
@@ -187,7 +236,6 @@ const embed = new EmbedBuilder()
 {name:"📦 CARICO",value:carico},
 {name:"📊 STATO",value:"🟥 In corso"}
 )
-
 .setTimestamp();
 
 const consegna = new ButtonBuilder()
@@ -200,7 +248,7 @@ embeds:[embed],
 components:[new ActionRowBuilder().addComponents(consegna)]
 });
 
-/* ricrea pulsante CREA VIAGGIO in fondo */
+/* ricrea pulsante CREA VIAGGIO */
 
 const channel = interaction.channel;
 
